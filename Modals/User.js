@@ -19,6 +19,12 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  refress_token:{
+type:String
+  },
+  onlineStatus:{
+    type:Boolean
+  }
 });
 User = mongoose.model("User", UserSchema);
 module.exports = User;

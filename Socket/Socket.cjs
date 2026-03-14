@@ -20,6 +20,7 @@ io.on("connection",(socket)=>{
     const userId = socket.handshake.query.userId 
     if(userId) {
         userSocketmap[userId] = socket.id
+        socket.join(userId)
         
     }
     io.emit("getOnlineUsers",Object.keys(userSocketmap))

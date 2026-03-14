@@ -30,8 +30,8 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
              chat.messages.push(newMessage._id)
           }
          //socket 
-         const receiverSocketId = getReceiverSocketId(receiverId)
-         console.log(receiverSocketId)
+       
+  
          const msgToSend = {
   _id: newMessage._id,
   senderId: newMessage.senderId,
@@ -41,10 +41,8 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
   createdAt: newMessage.createdAt,
   updatedAt: newMessage.updatedAt
 };
-         if(receiverSocketId){
-          io.to(receiverSocketId).emit("newMessage",msgToSend)
-        
-         }
+          io.to(receiverId).emit("newMessage",msgToSend)
+         io.to(senderId).emit("newMessage",msgToSend)
 
           await Promise.all([chat.save(),newMessage.save()])
           return res.status(200).json({status:true,message:newMessage})

@@ -41,10 +41,11 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
   createdAt: newMessage.createdAt,
   updatedAt: newMessage.updatedAt
 };
+   await Promise.all([chat.save(),newMessage.save()])
           io.to(receiverId).emit("newMessage",msgToSend)
          io.to(senderId).emit("newMessage",msgToSend)
-
-          await Promise.all([chat.save(),newMessage.save()])
+         
+       
           return res.status(200).json({status:true,message:newMessage})
  }
   catch(error){

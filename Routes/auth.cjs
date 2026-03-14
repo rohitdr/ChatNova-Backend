@@ -1,10 +1,10 @@
 const express= require('express')
 const bcrypt = require('bcryptjs')
 const router = express.Router();
-const User= require('../Modals/User')
+const User= require('../Modals/User.cjs')
 const jwt = require('jsonwebtoken')
 const {body,validationResult}=require('express-validator');
-const fetchUser = require('../Middleware/fetchUser');
+const fetchUser = require('../Middleware/fetchUser.cjs');
 
 
 
@@ -56,6 +56,7 @@ router.post('/login',[
      body('email').isEmail(),
      body('password').isLength({min:8})],async(req,res)=>{
           try{
+           console.log(req.body)
                let validationresult = validationResult(req)
           if(!validationresult.isEmpty()){
                  return res.status(404).json({error:validationresult.array()})
@@ -63,36 +64,45 @@ router.post('/login',[
      const {email,password}=req.body
       let user= await User.findOne({email:email})
       if(!user){
-           return res.status(404).json({status:false,message:"Please use Correct correndentials"})
+           return res.status(401).json({status:false,message:"Please use Correct correndentials"})
       }
       let passCompare= await bcrypt.compare(password,user.password)
       if(!passCompare){
-             return res.status(404).json({status:false,message:"Please use Correct correndentials"})
+             return res.status(401).json({status:false,message:"Please use Correct correndentials"})
       }
       const data={
           id:user.id
       }
+ 
       const refress_token=jwt.sign(data,process.env.REFRESS_SECRET,{expiresIn:"7d"})
+   
       const access_token=jwt.sign(data,process.env.ACCESS_SECRET,{expiresIn:"7m"})
-      res.cookie("refress_token",refress_token,{httpOnly:true,sameSite:"none",secure:true})
+
+      //for production
+     //  res.cookie("refress_token",refress_token,{httpOnly:false,sameSite:"lax",secure:false,path:'/'})
+
       await User.updateOne({_id:user.id},{$set:{refress_token,onlineStatus:true}});
-     return res.status(200).json({status:true,access_token})
+   
+     return res.status(200).json({status:true,access_token,refress_token})
+    
           }
           catch(error){
                return res.status(500).json({status:false,message:error.message})  
           }
 })
 // route to get new access token from refress token when it expires
-router.post('/refress',async(req,res)=>{
+router.post('/refresh',async(req,res)=>{
 try{
-      const refress_token = req.cookies.refress_token
-      if(!refress_token){
-           return res.status(404).json({status:false,message:"Please login again to continue"})
+      const authHeader = req.headers.authorization
+    
+      if(!authHeader){
+           return res.status(494).json({status:false,message:"Please login again to continue"})
       }
+      const refress_token=authHeader.split(" ")[1]
       const data = jwt.verify(refress_token,process.env.REFRESS_SECRET)
       let user = await User.findById(data.id)
       if(user.refress_token !== refress_token){
-             return res.status(404).json({status:false,message:"Please use a valid refress token"})
+             return res.status(474).json({status:false,message:"Please use a valid refress token"})
       }
       const userId = {
           id:data.id
@@ -115,15 +125,15 @@ router.post('/logout',fetchUser,async(req,res)=>{
          
      const id = req.user.id 
      let user = await User.findById(id)
-      const refress_token=req.cookies.refress_token
-      if(refress_token){
+      if(user){
            user = await User.findByIdAndUpdate({_id:id},{$set:{refress_token:null}})
       }
      if(!user){
         return res.status(404).json({status:false,message:"Something went wrong"})
      }
      user = await User.findByIdAndUpdate({_id:id},{$set:{onlineStatus:false}})
-     res.clearCookie('refress_token')
+     //for production
+     // res.clearCookie('refress_token')
      return res.status(200).json({status:true,message:"User logout Successfully"})
      }catch(error){
            return res.status(500).json({status:false,message:error.message})   
@@ -171,7 +181,7 @@ router.put('/forgetPassword',[
 router.get('/getUser',fetchUser,async(req,res)=>{
         try{
             const id = req.user.id 
-            const user = await User.findById(id).select("-password")
+            const user = await User.findById(id).select("-password -refress_token")
             if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
             }

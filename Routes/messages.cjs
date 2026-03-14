@@ -1,12 +1,14 @@
 const express = require('express');
-const fetchUser = require('../Middleware/fetchUser');
-const Conversation = require('../Modals/Conversation');
-const Message = require('../Modals/Message')
+const fetchUser = require('../Middleware/fetchUser.cjs');
+const Conversation = require('../Modals/Conversation.cjs');
+const Message = require('../Modals/Message.cjs');
+const { getReceiverSocketId,io } = require('../Socket/Socket.cjs');
 const router = express.Router();
 
 // route to send messages login required
 router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
  try{    
+
      const {message} = req.body
           const senderId = req.user.id
           const receiverId=req.params.id
@@ -27,11 +29,29 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
           if(newMessage){
              chat.messages.push(newMessage._id)
           }
+         //socket 
+         const receiverSocketId = getReceiverSocketId(receiverId)
+         console.log(receiverSocketId)
+         const msgToSend = {
+  _id: newMessage._id,
+  senderId: newMessage.senderId,
+  receiverId: newMessage.receiverId,
+  conversationId: newMessage.conversationId,
+  message: newMessage.message,
+  createdAt: newMessage.createdAt,
+  updatedAt: newMessage.updatedAt
+};
+         if(receiverSocketId){
+          io.to(receiverSocketId).emit("newMessage",msgToSend)
+        
+         }
+
           await Promise.all([chat.save(),newMessage.save()])
           return res.status(200).json({status:true,message:newMessage})
  }
   catch(error){
           return res.status(500).json({status:false,message:error.message})
+          
      }
 })
 

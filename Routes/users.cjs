@@ -1,9 +1,9 @@
 const mongoose= require('mongoose')
 const express = require('express');
-const fetchUser = require('../Middleware/fetchUser');
+const fetchUser = require('../Middleware/fetchUser.cjs');
 const router = express.Router();
-const User= require('../Modals/User')
-const Conversation = require('../Modals/Conversation');
+const User= require('../Modals/User.cjs')
+const Conversation = require('../Modals/Conversation.cjs');
 
 
 router.get('/chattedUsers', fetchUser,async(req,res)=>{
@@ -20,7 +20,8 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
                     user => user._id.toString() !== currentId.toString()
                  )
         )
-        res.status(200).json({status:true,users})
+         const onlineUsers =users.filter(user=>user && user.onlineStatus===true)
+        res.status(200).json({status:true,users,onlineUsers})
     }
      catch(error){
           return res.status(500).json({status:false,message:error.message})
@@ -49,13 +50,31 @@ router.get('/search', fetchUser,async(req,res)=>{
         if(!users){
             return res.status(404).json({status:false,message:"no user found"})
         }
-        return res.status(200).json({status:false,users})
+        return res.status(200).json({status:true,users})
     }
      catch(error){
           return res.status(500).json({status:false,message:error.message})
      }
 })
 
+//route to get user by id
+// route to get userDetails token required
+router.get('/getUser/:id',fetchUser,async(req,res)=>{
+        try{
+            const id = req.params.id
+            const user = await User.findById(id).select("-password -refress_token")
+            if(!user){
+               return res.status(404).json({status:false,message:"User does not Exist "})
+            }
+            res.status(200).json({status:true,user})
+            
+
+        }
+           catch(error){
+               return res.status(500).json({status:false,message:error.message})  
+          }
+
+})
 
 
 

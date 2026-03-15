@@ -195,5 +195,57 @@ router.get('/getUser',fetchUser,async(req,res)=>{
 
 })
 
+router.post('/update',fetchUser,async(req,res)=>{
+      try{
+
+
+         const {name,email,username,image,phone_number}=req.body
+            const id = req.user.id 
+            const user = await User.findById(id)
+              if(!user){
+               return res.status(404).json({status:false,message:"User does not Exist "})
+            }
+             let newUser ={}
+             if(name){
+               newUser.name = name
+             }
+             if(email){
+               newUser.email = email
+               let userbyemail = await User.findOne({email:email})
+               if(userbyemail){
+                      return res.status(404).json({status:false,message:"Email already exist "})
+               }
+             }
+             if(username){
+               newUser.username = username
+               let userbyusername = await User.findOne({username:username})
+               if(userbyusername){
+                    return res.status(404).json({status:false,message:"username already taken"})
+               }
+             }
+             if(phone_number){
+               newUser.phone_number = phone_number
+               let userbynumber = await User.findOne({phone_number:phone_number})
+               if(userbynumber){
+                   return res.status(404).json({status:false,message:"Phone number is already taken"})
+               }
+             }
+             if(image){
+               newUser.image=image
+             }
+            const updateUser = await User.findByIdAndUpdate(
+               id,{$set:newUser},{$new:true}
+
+            )
+
+            res.status(200).json({status:true,message:"User has been updated"})
+            
+
+        }
+           catch(error){
+               return res.status(500).json({status:false,message:error.message})  
+          }
+})
+
 
 module.exports= router

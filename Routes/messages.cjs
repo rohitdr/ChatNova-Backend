@@ -75,8 +75,6 @@ router.post('/sendFile/:id',fetchUser,async(req,res)=>{
    const {type,
             url,
         publicId,
-        resourceType,
-        
         bytes} =req.body
           const senderId = req.user.id
           const receiverId=req.params.id

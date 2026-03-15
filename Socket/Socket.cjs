@@ -1,13 +1,18 @@
 const {Server} =require("socket.io")
 const express = require('express')
 const http = require('http')
-
+const  cors = require("cors");
 const app =express();
 const server = http.createServer(app)
+app.use(cors({
+  origin: process.env.FRONTEND_URL, // your frontend
+  credentials: true,
+}))
 const io = new Server(server,{
        cors:{
         origin:[process.env.FRONTEND_URL],
-        methods:["GET","POST"]
+        methods:["GET","POST"],
+        credentials: true
     }
 })
 

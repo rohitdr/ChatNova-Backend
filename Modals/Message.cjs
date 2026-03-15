@@ -14,10 +14,29 @@ const messageSchema = new mongoose.Schema({
        type:mongoose.Schema.Types.ObjectId,
         ref:"conversation"
       },
-      message:{
-        type:String,
-        required:true
-      }
+     type:{
+      type:String,
+      enum:["text","image","video","text","raw"],
+      required:true
+     },
+     text:{
+      type:String,
+      default:null
+     },
+     media:{
+        url:String,
+        publicId:String,
+      
+    
+       
+        bytes:String,
+     },
+     status:{
+      type:String,
+      enum:
+      ["sent","delivered","seen"]
+     }
+
     
 
 },{timestamps:true})

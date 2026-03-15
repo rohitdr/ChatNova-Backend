@@ -24,7 +24,8 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
             senderId,
             receiverId,
             conversationId:chat._id,
-            message
+            text:message,
+            type:"text"
           })
           if(newMessage){
              chat.messages.push(newMessage._id)
@@ -66,6 +67,57 @@ router.get('/recieveMessage/:id',fetchUser,async(req,res)=>{
      }
 })
 
+
+// route for sending uploading images files and videos 
+router.post('/sendFile/:id',fetchUser,async(req,res)=>{
+ try{    
+
+   const {type,
+            url,
+        publicId,
+        resourceType,
+        
+        bytes} =req.body
+          const senderId = req.user.id
+          const receiverId=req.params.id
+          let chat = await Conversation.findOne({
+            participents:{$all:[senderId,receiverId]}
+          })
+          if(!chat){
+            chat = await Conversation.create({
+                participents:[senderId,receiverId]
+            })
+          }
+          let newMessage = new Message({
+            senderId,
+            receiverId,
+            conversationId:chat._id,
+            type,
+            media:{
+            url,
+        publicId,
+     
+        bytes}
+          })
+          if(newMessage){
+             chat.messages.push(newMessage._id)
+          }
+         //socket 
+       
+  
+         await Promise.all([chat.save(),newMessage.save()])
+
+          io.to(receiverId).emit("newMessage",newMessage)
+         io.to(senderId).emit("newMessage",newMessage)
+         
+       
+          return res.status(200).json({status:true,message:newMessage})
+ }
+  catch(error){
+          return res.status(500).json({status:false,message:error.message})
+          
+     }
+})
 
 
 

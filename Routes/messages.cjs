@@ -3,6 +3,7 @@ const fetchUser = require('../Middleware/fetchUser.cjs');
 const Conversation = require('../Modals/Conversation.cjs');
 const Message = require('../Modals/Message.cjs');
 const { getReceiverSocketId,io } = require('../Socket/Socket.cjs');
+const { default: sendNotification } = require('../Utils/sendNotification.cjs');
 const router = express.Router();
 
 // route to send messages login required
@@ -12,6 +13,7 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
      const {message} = req.body
           const senderId = req.user.id
           const receiverId=req.params.id
+          const receiver = await User.findbyId(receiverId)
           let chat = await Conversation.findOne({
             participents:{$all:[senderId,receiverId]}
           })
@@ -30,13 +32,21 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
           if(newMessage){
              chat.messages.push(newMessage._id)
           }
-         //socket 
+  
        
   
          await Promise.all([chat.save(),newMessage.save()])
 
           io.to(receiverId).emit("newMessage",newMessage)
          io.to(senderId).emit("newMessage",newMessage)
+         if(receiver.deviceTokens?.length){
+          await sendNotification(
+           message,
+            "Rohit Kumar",
+            receiver
+             
+          )
+         }
          
        
           return res.status(200).json({status:true,message:newMessage})

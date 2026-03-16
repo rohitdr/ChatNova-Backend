@@ -248,4 +248,25 @@ router.post('/update',fetchUser,async(req,res)=>{
 })
 
 
+
+
+router.post('/deviceToken', fetchUser,async(req,res)=>{
+     try{
+    const userId = req.user.id
+     const {deviceToken}=req.body
+     const user = await User.findById(userId)
+     if(!user){
+          return res.status(404).json({status:false,message:"Please Login again"})
+     }
+     if(!user.deviceTokens || user.deviceTokens?.length===0 || !user.deviceTokens?.includes(deviceToken)){
+      user.deviceTokens.push(deviceToken)
+      await user.save()
+     }
+     res.status(200).json({status:false,message:"Device token saved successfully"})
+     }
+           catch(error){
+               return res.status(500).json({status:false,message:error.message})  
+          }
+ 
+})
 module.exports= router

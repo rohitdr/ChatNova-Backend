@@ -25,6 +25,10 @@ type:String
   onlineStatus:{
     type:Boolean
   },
+  deviceTokens:{
+    type:[String],
+    default:[]
+  },
   image:{
     url:{
          type:String,

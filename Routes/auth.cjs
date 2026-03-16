@@ -12,10 +12,8 @@ const fetchUser = require('../Middleware/fetchUser.cjs');
 
 //path to create a user, not required access token
 router.post('/createUser',[
-     body('name').isLength({min:3}),
      body('email').isEmail(),
      body('username').isLength({min:8}),
-     body('phone_number').isLength({min:10,max:10}).isNumeric(),
      body('password').isLength({min:8})
 
 ],async(req,res)=>{
@@ -25,7 +23,7 @@ router.post('/createUser',[
                  return res.status(404).json({error:validationresult.array()})
           }
      
-      const {email,password,name,username,phone_number}=req.body
+      const {email,password,username}=req.body
       let user = await User.findOne({email:email})
      if(user){
           return res.status(404).json({status:false,message:"This email already exits Use new one"})
@@ -40,8 +38,6 @@ router.post('/createUser',[
       user = await User.create({
           email,
           password:securePassword,
-          name,
-          phone_number,
           username
        })
      
@@ -56,7 +52,7 @@ router.post('/login',[
      body('email').isEmail(),
      body('password').isLength({min:8})],async(req,res)=>{
           try{
-           console.log(req.body)
+       
                let validationresult = validationResult(req)
           if(!validationresult.isEmpty()){
                  return res.status(404).json({error:validationresult.array()})

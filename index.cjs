@@ -7,13 +7,13 @@ const {app,server}  = require('./Socket/Socket.cjs')
 dotenv.config();
 const ConnectToMongoDb = require('./db.cjs')
 ConnectToMongoDb();
-
-app.use(express.json())
-app.use(cookie())
 app.use(cors({
   origin: process.env.FRONTEND_URL, // your frontend
   credentials: true,
 }))
+app.use(express.json())
+app.use(cookie())
+
 app.use('/api/auth',require('./Routes/auth.cjs'))
 app.use('/api/messages',require('./Routes/messages.cjs'))
 app.use('/api/users',require('./Routes/users.cjs'))

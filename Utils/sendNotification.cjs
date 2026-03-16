@@ -3,6 +3,7 @@ const admin = require('../Config/firebase.cjs')
 const sendNotification = async (message, sender, user) => {
 
   if (!user.deviceTokens || user.deviceTokens.length === 0) {
+    console.log("return")
     return
   }
 

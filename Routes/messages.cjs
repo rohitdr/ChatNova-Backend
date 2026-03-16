@@ -3,7 +3,7 @@ const fetchUser = require('../Middleware/fetchUser.cjs');
 const Conversation = require('../Modals/Conversation.cjs');
 const Message = require('../Modals/Message.cjs');
 const { getReceiverSocketId,io } = require('../Socket/Socket.cjs');
-const { sendNotification } = require('../Utils/sendNotification.cjs');
+const sendNotification  = require('../Utils/sendNotification.cjs');
 const router = express.Router();
 
 // route to send messages login required

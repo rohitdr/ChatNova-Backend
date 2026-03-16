@@ -12,7 +12,7 @@ if(!user.deviceTokens || user.deviceTokens.length ===0){
 }
 try{
     const promise= await user.deviceTokens.map(token=>{
-admin.messaging().send({
+ return admin.messaging().send({
      token,
      notification:payload.notification
 })

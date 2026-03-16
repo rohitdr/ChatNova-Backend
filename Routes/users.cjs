@@ -11,14 +11,29 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
         const currentId=req.user.id;
         let currentchatters = await Conversation.find({
             participents:currentId
-        }).populate("participents","-password -email -refress_token").sort({updatedAt:-1})
+        }).populate({
+      path: "messages",
+      options: { sort: { createdAt: -1 }, limit: 1 } // only last message
+    }).populate("participents","-password -email -refress_token -deviceTokens").sort({updatedAt:-1})
+     
         if(!currentchatters || currentchatters.length ===0){
             return res.status(200).json({status:true,users:[]})
         }
-        const users = currentchatters.map(element=>
-                 element.participents.find(
+        const users = currentchatters.map(element=>{
+                const user =element.participents.find(
                     user => user._id.toString() !== currentId.toString()
                  )
+                 const lastMessage = element.messages[0] || null;
+
+      return {
+        ...user.toObject(),
+        conversationId: element._id,
+        lastMessage: lastMessage ? lastMessage.text : null,
+        lastMessageId: lastMessage ? lastMessage._id : null,
+        lastMessageTime: lastMessage ? lastMessage.createdAt : null
+      };
+                }
+                 
         )
          const onlineUsers =users.filter(user=>user && user.onlineStatus===true)
         res.status(200).json({status:true,users,onlineUsers})
@@ -46,7 +61,7 @@ router.get('/search', fetchUser,async(req,res)=>{
             }
 
             ]
-        }).select("-password -email -refress_token ")
+        }).select("-password -email -refress_token -deviceTokens ")
         if(!users){
             return res.status(404).json({status:false,message:"no user found"})
         }
@@ -62,7 +77,7 @@ router.get('/search', fetchUser,async(req,res)=>{
 router.get('/getUser/:id',fetchUser,async(req,res)=>{
         try{
             const id = req.params.id
-            const user = await User.findById(id).select("-password -refress_token")
+            const user = await User.findById(id).select("-password -refress_token -deviceTokens")
             if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
             }

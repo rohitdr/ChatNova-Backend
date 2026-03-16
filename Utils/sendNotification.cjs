@@ -21,8 +21,8 @@ const sendNotification = async (message, sender, user) => {
       }
     }
 
-    await admin.messaging().sendEachForMulticast(messagePayload)
-
+    const res=await admin.messaging().sendEachForMulticast(messagePayload)
+    console.log(res)
   } catch (error) {
     console.log("FCM error:", error)
   }

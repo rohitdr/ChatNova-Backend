@@ -13,7 +13,7 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
      const {message} = req.body
           const senderId = req.user.id
           const receiverId=req.params.id
-          const receiver = await User.findbyId(receiverId)
+          const receiver = await User.findById(receiverId)
           let chat = await Conversation.findOne({
             participents:{$all:[senderId,receiverId]}
           })

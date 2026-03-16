@@ -39,8 +39,10 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
 
           io.to(receiverId).emit("newMessage",newMessage)
          io.to(senderId).emit("newMessage",newMessage)
+         console.log("ues")
          if(receiver.deviceTokens?.length){
-          await sendNotification(
+           console.log("dsaf")
+           await sendNotification(
            message,
             "Rohit Kumar",
             receiver

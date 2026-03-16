@@ -17,14 +17,13 @@ const sendNotification = async (message, sender, user) => {
       },
       webpush: {
         notification: {
-          icon: "/favicon.ico"
+          icon:"https://res.cloudinary.com/do2twyxai/image/upload/v1773486472/ChatGPT_Image_Mar_14_2026_04_35_32_PM_owgv9l.png"
         }
       }
     }
-console.log(messagePayload)
-    const res=await admin.messaging().sendEachForMulticast(messagePayload)
-    console.log(res)
-    console.log("dsahjk")
+
+    await admin.messaging().sendEachForMulticast(messagePayload)
+  
   } catch (error) {
     console.log("FCM error:", error.message)
   }

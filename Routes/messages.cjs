@@ -5,6 +5,8 @@ const Message = require('../Modals/Message.cjs');
 const { getReceiverSocketId,io } = require('../Socket/Socket.cjs');
 const sendNotification  = require('../Utils/sendNotification.cjs');
 const router = express.Router();
+const User= require('../Modals/User.cjs')
+
 
 // route to send messages login required
 router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
@@ -40,9 +42,9 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
 
           io.to(receiverId).emit("newMessage",newMessage)
          io.to(senderId).emit("newMessage",newMessage)
-         console.log("ues")
+   
          if(receiver.deviceTokens?.length){
-           console.log("dsaf")
+      
            await sendNotification(
            message,
             sender.name,

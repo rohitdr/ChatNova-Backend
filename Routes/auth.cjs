@@ -12,15 +12,15 @@ const fetchUser = require('../Middleware/fetchUser.cjs');
 
 //path to create a user, not required access token
 router.post('/createUser',[
-     body('email').isEmail(),
-     body('username').isLength({min:8}),
-     body('password').isLength({min:8})
+     body('email',"Enter a valid Email").isEmail(),
+     body('username',"Enter a valid username").isLength({min:8}),
+     body('password',"Password must be of length 8").isLength({min:8})
 
 ],async(req,res)=>{
     try{
      let validationresult = validationResult(req)
           if(!validationresult.isEmpty()){
-                 return res.status(404).json({error:validationresult.array()})
+                 return res.status(404).json({ status:false,message:validationresult.array()[0].msg})
           }
      
       const {email,password,username}=req.body
@@ -44,27 +44,28 @@ router.post('/createUser',[
        return res.status(200).json({status:true,message:"Account Created successfully"})
      }
      catch(error){
+            console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
      }
 })
 //path to login for the user
 router.post('/login',[ 
-     body('email').isEmail(),
-     body('password').isLength({min:8})],async(req,res)=>{
+     body('email',"Enter a valid Email").isEmail(),
+     body('password',"Password must of length 8").isLength({min:8})],async(req,res)=>{
           try{
        
                let validationresult = validationResult(req)
           if(!validationresult.isEmpty()){
-                 return res.status(404).json({error:validationresult.array()})
+                 return res.status(404).json({ status:false,message:validationresult.array()[0].msg})
           }
      const {email,password}=req.body
       let user= await User.findOne({email:email})
       if(!user){
-           return res.status(401).json({status:false,message:"Please use Correct correndentials"})
+           return res.status(404).json({status:false,message:"Please use Correct correndentials"})
       }
       let passCompare= await bcrypt.compare(password,user.password)
       if(!passCompare){
-             return res.status(401).json({status:false,message:"Please use Correct correndentials"})
+             return res.status(404).json({status:false,message:"Please use Correct correndentials"})
       }
       const data={
           id:user.id
@@ -83,6 +84,7 @@ router.post('/login',[
     
           }
           catch(error){
+               console.log(error.message)
                return res.status(500).json({status:false,message:error.message})  
           }
 })
@@ -92,13 +94,13 @@ try{
       const authHeader = req.headers.authorization
     
       if(!authHeader){
-           return res.status(494).json({status:false,message:"Please login again to continue"})
+           return res.status(404).json({status:false,message:"Please login again to continue"})
       }
       const refress_token=authHeader.split(" ")[1]
       const data = jwt.verify(refress_token,process.env.REFRESS_SECRET)
       let user = await User.findById(data.id)
       if(user.refress_token !== refress_token){
-             return res.status(474).json({status:false,message:"Please use a valid refress token"})
+             return res.status(404).json({status:false,message:"Please use a valid refress token"})
       }
       const userId = {
           id:data.id
@@ -108,6 +110,7 @@ try{
       
 }
 catch(error){
+       console.log(error.message)
          return res.status(500).json({status:false,message:error.message}) 
 }
 })
@@ -132,6 +135,7 @@ router.post('/logout',fetchUser,async(req,res)=>{
      // res.clearCookie('refress_token')
      return res.status(200).json({status:true,message:"User logout Successfully"})
      }catch(error){
+            console.log(error.message)
            return res.status(500).json({status:false,message:error.message})   
      }
 })
@@ -169,6 +173,7 @@ router.put('/forgetPassword',[
 
           }
            catch(error){
+                 console.log(error.message)
                return res.status(500).json({status:false,message:error.message})  
           }
 })
@@ -177,7 +182,7 @@ router.put('/forgetPassword',[
 router.get('/getUser',fetchUser,async(req,res)=>{
         try{
             const id = req.user.id 
-            const user = await User.findById(id).select("-password -refress_token")
+            const user = await User.findById(id).select("-password -refress_token -deviceTokens")
             if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
             }
@@ -186,6 +191,7 @@ router.get('/getUser',fetchUser,async(req,res)=>{
 
         }
            catch(error){
+                 console.log(error.message)
                return res.status(500).json({status:false,message:error.message})  
           }
 
@@ -239,6 +245,7 @@ router.post('/update',fetchUser,async(req,res)=>{
 
         }
            catch(error){
+                 console.log(error.message)
                return res.status(500).json({status:false,message:error.message})  
           }
 })
@@ -261,6 +268,7 @@ router.post('/deviceToken', fetchUser,async(req,res)=>{
      res.status(200).json({status:false,message:"Device token saved successfully"})
      }
            catch(error){
+                 console.log(error.message)
                return res.status(500).json({status:false,message:error.message})  
           }
  

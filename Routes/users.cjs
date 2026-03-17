@@ -39,6 +39,7 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
         res.status(200).json({status:true,users,onlineUsers})
     }
      catch(error){
+          console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
      }
 })
@@ -68,6 +69,7 @@ router.get('/search', fetchUser,async(req,res)=>{
         return res.status(200).json({status:true,users})
     }
      catch(error){
+          console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
      }
 })
@@ -86,6 +88,7 @@ router.get('/getUser/:id',fetchUser,async(req,res)=>{
 
         }
            catch(error){
+              console.log(error.message)
                return res.status(500).json({status:false,message:error.message})  
           }
 

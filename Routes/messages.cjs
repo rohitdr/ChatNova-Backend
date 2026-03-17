@@ -57,6 +57,7 @@ router.post('/sendMessage/:id',fetchUser,async(req,res)=>{
           return res.status(200).json({status:true,message:newMessage})
  }
   catch(error){
+      console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
           
      }
@@ -78,6 +79,7 @@ router.get('/recieveMessage/:id',fetchUser,async(req,res)=>{
 
   }
  catch(error){
+    console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
      }
 })
@@ -127,6 +129,7 @@ router.post('/sendFile/:id',fetchUser,async(req,res)=>{
           return res.status(200).json({status:true,message:newMessage})
  }
   catch(error){
+      console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
           
      }
@@ -138,6 +141,9 @@ router.get('/conversationId/:id',fetchUser,async(req,res)=>{
  
           const senderId = req.user.id
           const receiverId=req.params.id
+          if(!receiverId){
+            return res.status(404).json({status:false,message:"Please choose a person to Chat"})
+          }
           let chat = await Conversation.findOne({
             participents:{$all:[senderId,receiverId]}
           })
@@ -149,6 +155,7 @@ router.get('/conversationId/:id',fetchUser,async(req,res)=>{
            return res.status(200).json({status:true,conversation:chat})
  }
   catch(error){
+      console.log(error.message)
           return res.status(500).json({status:false,message:error.message})
           
      }

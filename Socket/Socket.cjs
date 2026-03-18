@@ -24,9 +24,7 @@ const userSocketmap={}
 
 io.on("connection",async(socket)=>{
     const userId = socket.handshake.query.userId 
-    await User.findByIdAndUpdate(userId,{
-       onlineStatus:true
-    })
+ 
     if(userId) {
         userSocketmap[userId] = socket.id
         socket.join(userId)
@@ -36,10 +34,7 @@ io.on("connection",async(socket)=>{
     socket.on("disconnect" ,async()=>{
         delete userSocketmap[userId]
        io.emit("getOnlineUsers",Object.keys(userSocketmap))
-       await User.findByIdAndUpdate(userId,{
-       onlineStatus:false,
-       lastSeen:new Date()
-       ,},  {$new:true})
+     
     })
 })
 module.exports={io,app,server,getReceiverSocketId,userSocketmap}

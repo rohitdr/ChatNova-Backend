@@ -158,10 +158,50 @@ router.put('/forgetPassword',[
                  return res.status(404).json({status:false,message:"Use Correct Corredentials "})
           }
           const salt = await bcrypt.genSalt(10)
-          const newpassword = await bcrypt.hash(password,salt)
+          const updatePassword = await bcrypt.hash(password,salt)
            user = await User.updateOne(
                {_id:user.id},
-               {$set:{password:newpassword}}
+               {$set:{password:updatePassword}}
+           )
+           if(!user){
+                    return res.status(404).json({status:false,message:"Password not changed"})
+           }
+          return res.status(200).json({status:true,message:"password changed successfully"})
+
+
+
+
+          }
+           catch(error){
+                 console.log(error.message)
+               return res.status(500).json({status:false,message:error.message})  
+          }
+})
+//route to update password of login user no authentication required
+router.put('/updatePassword',[
+      body('oldPassword',"password length should be more than 8").isLength({min:8}),
+      body('newPassword',"password length should be more than 8").isLength({min:8})
+     ],fetchUser,async(req,res)=>{
+          try{
+               let validationresult = validationResult(req)
+          if(!validationresult.isEmpty()){
+                return res.status(404).json({ status:false,message:validationresult.array()[0].msg})
+          }
+          const {oldPassword,newPassword}=req.body
+          const userId=req.user.id
+          let user = await User.findById(userId)
+          if(!user){
+              return res.status(404).json({status:false,message:"Please login again "})
+          }
+          let comparpass = await bcrypt.compare(oldPassword,user.password)
+          if(!comparpass){
+               return res.status(404).json({status:false,message:"Please use the correct old password "})
+          }
+          const salt = await bcrypt.genSalt(10)
+          const changedPassowrd = await bcrypt.hash(newPassword,salt)
+           user = await User.updateOne(
+               {_id:user.id},
+               {$set:{password:changedPassowrd}}
            )
            if(!user){
                     return res.status(404).json({status:false,message:"Password not changed"})

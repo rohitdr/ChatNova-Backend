@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    default:"Papa"
+    default:"Rohan"
   },
   email: {
     type: String,
@@ -18,17 +18,22 @@ const UserSchema = new mongoose.Schema({
   },
   phone_number: {
     type: Number,
+    default:7451256253
 
   },
   refress_token:{
 type:String
   },
   onlineStatus:{
-    type:Boolean
+    type:Boolean,
+    default:false
   },
   deviceTokens:{
     type:[String],
     default:[]
+  },
+  lastSeen:{
+    type:Date,
   },
   image:{
     url:{

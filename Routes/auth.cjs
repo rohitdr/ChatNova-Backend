@@ -35,13 +35,21 @@ router.post('/createUser',[
 
       const salt = await bcrypt.genSalt(10);
       const securePassword = await bcrypt.hash(password,salt) 
+         
       user = await User.create({
           email,
           password:securePassword,
           username
        })
-     
-       return res.status(200).json({status:true,message:"Account Created successfully"})
+     const data={
+          id:user.id
+      }
+ 
+      const refress_token=jwt.sign(data,process.env.REFRESS_SECRET,{expiresIn:"7d"})
+   
+      const access_token=jwt.sign(data,process.env.ACCESS_SECRET,{expiresIn:"7m"})
+         await User.updateOne({_id:user.id},{$set:{refress_token,onlineStatus:true}});
+       return res.status(200).json({status:true,access_token,refress_token})
      }
      catch(error){
             console.log(error.message)
@@ -140,14 +148,14 @@ router.post('/logout',fetchUser,async(req,res)=>{
      }
 })
 router.put('/forgetPassword',[
-      body('email').isEmail(),
-      body('username').isLength({min:8}),
-      body('password').isLength({min:8})
+      body('email',"Please Enter a valid Email").isEmail(),
+      body('username',"Username length must be 8 digits").isLength({min:8}),
+      body('password',"password must be of length 8").isLength({min:8})
      ],async(req,res)=>{
           try{
                let validationresult = validationResult(req)
           if(!validationresult.isEmpty()){
-                 return res.status(404).json({error:validationresult.array()})
+                return res.status(404).json({ status:false,message:validationresult.array()[0].msg})
           }
           const {email,password,username}=req.body
           let user = await User.findOne({email:email})

@@ -30,7 +30,9 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
         conversationId: element._id,
         lastMessage: lastMessage ? lastMessage.text : null,
         lastMessageId: lastMessage ? lastMessage._id : null,
-        lastMessageTime: lastMessage ? lastMessage.createdAt : null
+        lastMessageTime: lastMessage ? lastMessage.createdAt : null,
+        lastMessageType:lastMessage? lastMessage.type:null
+      
       };
                 }
                  
@@ -63,8 +65,8 @@ router.get('/search', fetchUser,async(req,res)=>{
 
             ]
         }).select("-password -email -refress_token -deviceTokens ")
-        if(!users){
-            return res.status(404).json({status:false,message:"no user found"})
+        if(users.length === 0){
+            return res.status(404).json({status:false,message:"No user found"})
         }
         return res.status(200).json({status:true,users})
     }

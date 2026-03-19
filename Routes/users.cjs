@@ -10,7 +10,8 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
     try{
         const currentId=req.user.id;
         let currentchatters = await Conversation.find({
-            participents:currentId
+            participents:currentId,
+          messages:{$exists:true,$not:{$size:0}}
         }).populate({
       path: "messages",
       options: { sort: { createdAt: -1 }, limit: 1 } // only last message

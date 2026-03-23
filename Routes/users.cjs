@@ -10,36 +10,36 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
     try{
         const currentId=req.user.id;
         let currentchatters = await Conversation.find({
-            participents:currentId,
-          messages:{$exists:true,$not:{$size:0}}
-        }).populate({
-      path: "messages",
-      options: { sort: { createdAt: -1 }, limit: 1 } // only last message
-    }).populate("participents","-password -email -refress_token -deviceTokens").sort({updatedAt:-1})
-     
+            type:"private",
+            "participents.user":currentId,
+            "lastMessage.text":{$exists:true},
+      $expr:{$eq:[{$size:"$participents"},2]}
+            
+        }).populate({path:"participents.user",model:"User",select:"name image username phone_number"}).sort({updatedAt:-1})
+    
         if(!currentchatters || currentchatters.length ===0){
             return res.status(200).json({status:true,users:[]})
         }
+        
         const users = currentchatters.map(element=>{
-                const user =element.participents.find(
-                    user => user._id.toString() !== currentId.toString()
+                let otheruser =element.participents.find(
+                  
+                    p => p.user._id.toString() !== currentId.toString()
+                  
                  )
-                 const lastMessage = element.messages[0] || null;
 
+            
+     
       return {
-        ...user.toObject(),
-        conversationId: element._id,
-        lastMessage: lastMessage ? lastMessage.text : null,
-        lastMessageId: lastMessage ? lastMessage._id : null,
-        lastMessageTime: lastMessage ? lastMessage.createdAt : null,
-        lastMessageType:lastMessage? lastMessage.type:null
-      
+        ...otheruser.toObject(),
+        ConversationId:element._id,
+        lastMessage:element.lastMessage
       };
                 }
                  
         )
-         const onlineUsers =users.filter(user=>user && user.onlineStatus===true)
-        res.status(200).json({status:true,users,onlineUsers})
+       
+        res.status(200).json({status:true,users})
     }
      catch(error){
           console.log(error.message)
@@ -96,7 +96,6 @@ router.get('/getUser/:id',fetchUser,async(req,res)=>{
           }
 
 })
-
 
 
 

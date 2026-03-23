@@ -17,6 +17,7 @@ app.use(cookie())
 app.use('/api/auth',require('./Routes/auth.cjs'))
 app.use('/api/messages',require('./Routes/messages.cjs'))
 app.use('/api/users',require('./Routes/users.cjs'))
+app.use('/api/groups',require('./Routes/group.cjs'))
 
 const PORT = process.env.PORT || 5000
 server.listen(PORT,()=>{

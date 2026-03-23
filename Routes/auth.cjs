@@ -81,7 +81,7 @@ router.post('/login',[
  
       const refress_token=jwt.sign(data,process.env.REFRESS_SECRET,{expiresIn:"7d"})
    
-      const access_token=jwt.sign(data,process.env.ACCESS_SECRET,{expiresIn:"7m"})
+      const access_token=jwt.sign(data,process.env.ACCESS_SECRET,{expiresIn:"7d"})
 
       //for production
      //  res.cookie("refress_token",refress_token,{httpOnly:false,sameSite:"lax",secure:false,path:'/'})

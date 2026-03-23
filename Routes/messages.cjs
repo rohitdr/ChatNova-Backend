@@ -136,22 +136,15 @@ router.get("/recieveMessage/:conversationId", fetchUser, async (req, res) => {
 // route for sending uploading images files and videos
 router.post("/sendFile/:id", fetchUser, async (req, res) => {
   try {
-    const { type, url, publicId, bytes } = req.body;
-  
-    let chat = await Conversation.findOne({
-      type:"private",
-      "participents.user": { $all: [senderId, receiverId] },
-      participents:{$size:2}
-      
-    });
+    const { type, url, publicId, bytes,tempId } = req.body;
+       const senderId=req.user.id
+       const sender = await User.findById(senderId)
+    let chat = await Conversation.findById(req.params.id)
     if (!chat) {
-      chat = await Conversation.create({
-        type:"private",
-        participents: [{user:senderId}, {user:receiverId}],
-      });
+     return res.status(404).json({status:false,message:"Conversation id is not valid"})
     }
     let newMessage = new Message({
-      senderId,
+      senderId:sender,
       conversationId: chat._id,
       type,
       media: {
@@ -162,14 +155,35 @@ router.post("/sendFile/:id", fetchUser, async (req, res) => {
     });
     
     //socket
+const populatedConversation = await Conversation.findById(chat._id).populate("participents.user","-password -email -refress_token -deviceTokens")
 
     await  newMessage.save()
 chat.lastMessage={
-      text:"New media ",
-      sender:senderId
+     text:`New ${type}`,
+      sender:senderId,
+      createdAt:Date.now()
     }
     await chat.save()
+    const conversationToSend={
+       ...populatedConversation.toObject(),
+        ConversationId:chat._id,
+        lastMessage:{
+          text:`New ${type}`,
+      sender:senderId,
+      createdAt:Date.now()
+        }
+    }
+  chat.participents.forEach(  p=>{
+      // if(p.user.toString() !== senderId){
+  io.to(p.user.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
 
+  
+    // if (receiver.deviceTokens?.length) {
+    //   await sendNotification(message, sender.name, receiver);
+    // }
+      // }
+
+  })
     // io.to(receiverId).emit("newMessage", newMessage);
     // io.to(senderId).emit("newMessage", newMessage);
 

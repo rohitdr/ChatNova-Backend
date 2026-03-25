@@ -2,7 +2,7 @@ const express = require("express");
 const fetchUser = require("../Middleware/fetchUser.cjs");
 const Conversation = require("../Modals/Conversation.cjs");
 const Message = require("../Modals/Message.cjs");
-const { getReceiverSocketId, io } = require("../Socket/Socket.cjs");
+const { getReceiverSocketId,userSocketmap, io } = require("../Socket/Socket.cjs");
 const sendNotification = require("../Utils/sendNotification.cjs");
 const router = express.Router();
 const User = require("../Modals/User.cjs");
@@ -51,7 +51,9 @@ router.post("/sendMessage", fetchUser, async (req, res) => {
           .json({ status: false, message: "Conversation or Reciver id is required" });
     }
 const populatedConversation = await Conversation.findById(conversation._id).populate("participents.user","-password -email -refress_token -deviceTokens")
-    let newMessage =await Message.create({
+ 
+
+let newMessage =await Message.create({
       senderId:sender,
       conversationId:conversation._id,
       text: message,
@@ -72,7 +74,22 @@ const populatedConversation = await Conversation.findById(conversation._id).popu
       createdAt:Date.now()
         }
     }
-
+    const recievers = conversation.participents
+    .map((p)=>p.user.toString() )
+    .filter((p)=>p !== senderId)
+    recievers.forEach(element => {
+      if(userSocketmap[element])
+      {
+        const alreadydeliverd = newMessage.deliveredTo.some((d)=>
+        d.user.toString() === element
+        )
+        if(!alreadydeliverd){
+          newMessage.deliveredTo.push({user:element,deliveredAt:Date.now()})
+        }
+      }
+       
+    });
+         await newMessage.save()
 
     // if (receiver.deviceTokens?.length) {
     //   await sendNotification(message, sender.name, receiver);
@@ -80,6 +97,12 @@ const populatedConversation = await Conversation.findById(conversation._id).popu
       // }
 
     io.to(conversation._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
+ 
+  
+
+ 
+    // io.to(conversation._id.toString()).emit("message_delivered",{messageId:newMessage._id,deliveredTo:newMessage.deliveredTo})
+  
   
 
 

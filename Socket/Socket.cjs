@@ -32,7 +32,16 @@ io.on("connection",async(socket)=>{
         socket.join(userId)
         
     }
+    socket.on("join_group",(groupId)=>{
+     socket.join(groupId)
+     console.log("room joined " + groupId)
+    })
+    socket.on("leave_group",(groupId)=>{
+      socket.leave(groupId)
+      console.log("room leaved " + groupId)
+    }) 
     io.emit("getOnlineUsers",Object.keys(userSocketmap))
+    // socket.on("sendReaction", updateReacion )
     socket.on("disconnect" ,async()=>{
         delete userSocketmap[userId]
        io.emit("getOnlineUsers",Object.keys(userSocketmap))

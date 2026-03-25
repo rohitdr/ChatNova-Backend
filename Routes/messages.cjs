@@ -72,20 +72,15 @@ const populatedConversation = await Conversation.findById(conversation._id).popu
       createdAt:Date.now()
         }
     }
-    conversation.participents.forEach(  p=>{
-      // if(p.user.toString() !== senderId){
-  io.to(p.user.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
 
-  
+
     // if (receiver.deviceTokens?.length) {
     //   await sendNotification(message, sender.name, receiver);
     // }
       // }
 
-  })
-    //socket implementation
-    // io.to(receiverId).emit("newMessage", newMessage);
-    // io.to(senderId).emit("newMessage", newMessage);
+    io.to(conversation._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
+  
 
 
     return res.status(200).json({ status: true, message: newMessage });
@@ -173,9 +168,9 @@ chat.lastMessage={
       createdAt:Date.now()
         }
     }
-  chat.participents.forEach(  p=>{
+  // chat.participents.forEach(  p=>{
       // if(p.user.toString() !== senderId){
-  io.to(p.user.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
+  io.to(chat._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
 
   
     // if (receiver.deviceTokens?.length) {
@@ -183,7 +178,7 @@ chat.lastMessage={
     // }
       // }
 
-  })
+  // })
     // io.to(receiverId).emit("newMessage", newMessage);
     // io.to(senderId).emit("newMessage", newMessage);
 
@@ -221,5 +216,6 @@ router.get("/conversationId/:id", fetchUser, async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 });
+
 
 module.exports = router;

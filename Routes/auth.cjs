@@ -321,4 +321,7 @@ router.post('/deviceToken', fetchUser,async(req,res)=>{
           }
  
 })
+
+
+
 module.exports= router

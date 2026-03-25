@@ -58,6 +58,7 @@ router.get('/search', fetchUser,async(req,res)=>{
                   $or:[
                     {username:{$regex:'.*'+search+'.*',$options:'i'}},
                     {name:{$regex:'.*'+search+'.*',$options:'i'}}
+             
                     
                   ]
             },{
@@ -66,6 +67,7 @@ router.get('/search', fetchUser,async(req,res)=>{
 
             ]
         }).select("-password -email -refress_token -deviceTokens ")
+
         if(users.length === 0){
             return res.status(404).json({status:false,message:"No user found"})
         }

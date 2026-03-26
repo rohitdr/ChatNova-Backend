@@ -73,6 +73,16 @@ const conversations = await Conversation.find({
      socket.join(groupId)
 
     })
+
+
+    socket.on("typing",({conversationId,userId,name})=>{
+        socket.to(conversationId).emit("user_typing",{userId,name})
+
+    })
+    socket.on("stop_typing",({conversationId,userId,name})=>{
+        socket.to(conversationId).emit("user_stop_typing",{userId})
+
+    })
     socket.on("leave_group",(groupId)=>{
       socket.leave(groupId)
    

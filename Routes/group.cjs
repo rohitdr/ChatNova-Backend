@@ -5,7 +5,8 @@ const Conversation = require("../Modals/Conversation.cjs");
 const isGroupAdmin  = require("../Middleware/isGroupAdmin.cjs");
 const User = require('../Modals/User.cjs')
 const mongoose = require('mongoose')
-const Message = require('../Modals/Message.cjs')
+const Message = require('../Modals/Message.cjs');
+const { io } = require("../Socket/Socket.cjs");
 
 router.post("/createGroup", fetchUser, async (req, res) => {
   try {
@@ -40,7 +41,7 @@ router.post("/createGroup", fetchUser, async (req, res) => {
   }
 });
 // route to 
-router.patch("/addMember", fetchUser,isGroupAdmin, async (req, res) => {
+router.post("/addMember", fetchUser,isGroupAdmin, async (req, res) => {
   try {
     const {  participents } = req.body;
       if (!participents || participents.length < 1) {
@@ -70,15 +71,16 @@ router.patch("/addMember", fetchUser,isGroupAdmin, async (req, res) => {
     req.group.participents.push(...participents)
             req.group.lastActivity=Date.now()
     await req.group.save()
-    
+    const conversation = await Conversation.findById(req.group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
    
+   io.to(req.group._id.toString()).emit("member_added",{groupId:req.group._id.toString(),participents:conversation.participents})
     return res.status(200).json({ status: true, message: req.group });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ status: false, message: error.message });
   }
 });
-router.patch("/removeMember", fetchUser,isGroupAdmin, async (req, res) => {
+router.post("/removeMember", fetchUser,isGroupAdmin, async (req, res) => {
   try {
     const { participents } = req.body;
     const id = req.user.id;
@@ -111,8 +113,9 @@ router.patch("/removeMember", fetchUser,isGroupAdmin, async (req, res) => {
     );
     req.group.lastActivity=Date.now()
   await req.group.save()
-    
-   
+        const conversation = await Conversation.findById(req.group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
+
+   io.to(req.group._id.toString()).emit("remove_member",{groupId:req.group._id.toString(),participents:conversation.participents})
     return res.status(200).json({ status: true, message:req.group  });
   } catch (error) {
     console.log(error.message);
@@ -181,16 +184,20 @@ router.get("/allgroups", fetchUser, async (req, res) => {
 // route to update group information 
 router.put("/groupUpdate", fetchUser,isGroupAdmin, async (req, res) => {
   try {
-
-    const {name,avtar,inviteCode}=req.body
-    const group = req.group
+     console.log("hello")
+    const {name,image,inviteCode}=req.body
+    let group = req.group
     if(name){
       group.name=name
     }
-    if(avtar){
-      group.avtar=avtar
+    if(image){
+      group.avtar=image
     }
+    console.log("hello")
+
     await group.save()
+    io.to(group._id.toString()).emit("group_update",group)
+
    
     return res.status(200).json({ status: true, message:group });
   } catch (error) {

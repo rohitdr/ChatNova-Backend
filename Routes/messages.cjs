@@ -191,6 +191,22 @@ chat.lastMessage={
       createdAt:Date.now()
         }
     }
+     const recievers = chat.participents
+    .map((p)=>p.user.toString() )
+    .filter((p)=>p !== senderId)
+    recievers.forEach(element => {
+      if(userSocketmap[element])
+      {
+        const alreadydeliverd = newMessage.deliveredTo.some((d)=>
+        d.user.toString() === element
+        )
+        if(!alreadydeliverd){
+          newMessage.deliveredTo.push({user:element,deliveredAt:Date.now()})
+        }
+      }
+       
+    });
+         await newMessage.save()
   // chat.participents.forEach(  p=>{
       // if(p.user.toString() !== senderId){
   io.to(chat._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})

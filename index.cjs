@@ -5,7 +5,8 @@ const cookie = require('cookie-parser')
 const express = require('express')
 const {app,server}  = require('./Socket/Socket.cjs')
 dotenv.config();
-const ConnectToMongoDb = require('./db.cjs')
+const ConnectToMongoDb = require('./db.cjs');
+const  errorHandler = require('./Middleware/errorHandler.cjs');
 ConnectToMongoDb();
 app.use(cors({
   origin: process.env.FRONTEND_URL, // your frontend
@@ -18,7 +19,7 @@ app.use('/api/auth',require('./Routes/auth.cjs'))
 app.use('/api/messages',require('./Routes/messages.cjs'))
 app.use('/api/users',require('./Routes/users.cjs'))
 app.use('/api/groups',require('./Routes/group.cjs'))
-
+app.use(errorHandler)
 const PORT = process.env.PORT || 5000
 server.listen(PORT,()=>{
     console.log(`listening at port ${PORT}`)

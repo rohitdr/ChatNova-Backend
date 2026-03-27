@@ -46,5 +46,9 @@ type:String
     }
   }
 });
+UserSchema.index({email:1})
+UserSchema.index({username:1})
+UserSchema.index({phone_number:1})
+
 User = mongoose.model("User", UserSchema);
 module.exports = User;

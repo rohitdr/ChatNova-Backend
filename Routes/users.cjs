@@ -4,10 +4,11 @@ const fetchUser = require('../Middleware/fetchUser.cjs');
 const router = express.Router();
 const User= require('../Modals/User.cjs')
 const Conversation = require('../Modals/Conversation.cjs');
+const  asyncHandler  = require('../Utils/asyncHandler.cjs');
 
 
-router.get('/chattedUsers', fetchUser,async(req,res)=>{
-    try{
+router.get('/chattedUsers', fetchUser,asyncHandler( async(req,res)=>{
+  
         const currentId=req.user.id;
         let currentchatters = await Conversation.find({
             type:"private",
@@ -40,17 +41,14 @@ router.get('/chattedUsers', fetchUser,async(req,res)=>{
         )
        
         res.status(200).json({status:true,users})
-    }
-     catch(error){
-          console.log(error.message)
-          return res.status(500).json({status:false,message:error.message})
-     }
-})
+    
+    
+}))
 
 
 //route to search user with name , username ,phonenumber login required
-router.get('/search', fetchUser,async(req,res)=>{
-    try{
+router.get('/search', fetchUser,asyncHandler(async(req,res)=>{
+    
         const currentId=req.user.id;
           const search = req.query.search || " "
         const users = await User.find({
@@ -72,17 +70,13 @@ router.get('/search', fetchUser,async(req,res)=>{
             return res.status(404).json({status:false,message:"No user found"})
         }
         return res.status(200).json({status:true,users})
-    }
-     catch(error){
-          console.log(error.message)
-          return res.status(500).json({status:false,message:error.message})
-     }
-})
+   
+}))
 
 //route to get user by id
 // route to get userDetails token required
-router.get('/getUser/:id',fetchUser,async(req,res)=>{
-        try{
+router.get('/getUser/:id',fetchUser,asyncHandler(async(req,res)=>{
+        
             const id = req.params.id
             const user = await User.findById(id).select("-password -refress_token -deviceTokens")
             if(!user){
@@ -91,13 +85,9 @@ router.get('/getUser/:id',fetchUser,async(req,res)=>{
             res.status(200).json({status:true,user})
             
 
-        }
-           catch(error){
-              console.log(error.message)
-               return res.status(500).json({status:false,message:error.message})  
-          }
+       
 
-})
+}))
 
 
 

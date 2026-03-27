@@ -6,10 +6,11 @@ const { getReceiverSocketId,userSocketmap, io } = require("../Socket/Socket.cjs"
 const sendNotification = require("../Utils/sendNotification.cjs");
 const router = express.Router();
 const User = require("../Modals/User.cjs");
+const  asyncHandler  = require("../Utils/asyncHandler.cjs");
 
 // route to send messages login required
-router.post("/sendMessage", fetchUser, async (req, res) => {
-  try {
+router.post("/sendMessage", fetchUser,asyncHandler(async (req, res) => {
+  
     const { receiverId, message, conversationId,tempId } = req.body;
     const senderId = req.user.id;
     const sender = await User.findById(senderId)
@@ -107,15 +108,12 @@ let newMessage =await Message.create({
 
 
     return res.status(200).json({ status: true, message: newMessage });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 
 //route to receive message login required
-router.get("/recieveMessage/:conversationId", fetchUser, async (req, res) => {
-  try {
+router.get("/recieveMessage/:conversationId", fetchUser, asyncHandler(async (req, res) => {
+
     const id =req.user.id
     const {limit,page}=req.query
   const conversationId = req.params.conversationId
@@ -145,15 +143,12 @@ router.get("/recieveMessage/:conversationId", fetchUser, async (req, res) => {
      const finalmessages = hasMore?messages.slice(0,limit):messages
   
     return res.status(200).json({ status: true, message:finalmessages,hasMore});
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 
 // route for sending uploading images files and videos
-router.post("/sendFile/:id", fetchUser, async (req, res) => {
-  try {
+router.post("/sendFile/:id", fetchUser,asyncHandler( async (req, res) => {
+  
     const { type, url, publicId, bytes,tempId } = req.body;
        const senderId=req.user.id
        const sender = await User.findById(senderId)
@@ -222,15 +217,12 @@ chat.lastMessage={
     // io.to(senderId).emit("newMessage", newMessage);
 
     return res.status(200).json({ status: true, message: newMessage });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 //route to get conversation id 
 // // check it once after group completed 
-router.get("/conversationId/:id", fetchUser, async (req, res) => {
-  try {
+router.get("/conversationId/:id", fetchUser, asyncHandler(async (req, res) => {
+ 
     const senderId = req.user.id;
     const receiverId = req.params.id;
     if (!receiverId) {
@@ -250,11 +242,8 @@ router.get("/conversationId/:id", fetchUser, async (req, res) => {
       });
     }
     return res.status(200).json({ status: true, conversation: chat });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 
 
 module.exports = router;

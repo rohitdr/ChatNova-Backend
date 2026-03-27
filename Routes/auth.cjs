@@ -65,11 +65,11 @@ router.post('/login',[
      const {email,password}=req.body
       let user= await User.findOne({email:email})
       if(!user){
-           return res.status(404).json({status:false,message:"Please use Correct correndentials"})
+           return res.status(400).json({status:false,message:"Please use Correct correndentials"})
       }
       let passCompare= await bcrypt.compare(password,user.password)
       if(!passCompare){
-             return res.status(401).json({status:false,message:"Please use Correct correndentials"})
+             return res.status(400).json({status:false,message:"Please use Correct correndentials"})
       }
       const data={
           id:user.id
@@ -101,10 +101,10 @@ router.post('/refresh',asyncHandler (async(req,res)=>{
       let user = await User.findById(data.id).select("refress_token")
 
       if(!user){
-             return res.status(401).json({status:false,message:"User Not Found"})
+             return res.status(400).json({status:false,message:"User Not Found"})
       }
       if(user.refress_token !== refress_token){
-             return res.status(401).json({status:false,message:"Please use a valid refress token"})
+             return res.status(404).json({status:false,message:"Please use a valid refress token"})
       }
       const userId = {
           id:data.id
@@ -182,11 +182,11 @@ router.put('/updatePassword',[
           const userId=req.user.id
           let user = await User.findById(userId)
           if(!user){
-              return res.status(404).json({status:false,message:"Please login again "})
+              return res.status(401).json({status:false,message:"Please login again "})
           }
           let comparpass = await bcrypt.compare(oldPassword,user.password)
           if(!comparpass){
-               return res.status(401).json({status:false,message:"Please use the correct old password "})
+               return res.status(400).json({status:false,message:"Please use the correct old password "})
           }
           const salt = await bcrypt.genSalt(10)
           const changedPassowrd = await bcrypt.hash(newPassword,salt)

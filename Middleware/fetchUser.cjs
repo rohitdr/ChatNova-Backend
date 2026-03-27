@@ -6,7 +6,7 @@ try{
 
 
  if(!authHeader){
-      return res.status(403).json({status:false,message:"Please login to continue"})
+      return res.status(401).json({status:false,message:"Please login to continue"})
  }
  const token =authHeader.split(" ")[1]
 
@@ -16,7 +16,7 @@ try{
 }
 catch(error)
 {
-    return res.status(403).json({status:false,message:error.message})
+    return res.status(500).json({status:false,message:error.message})
 }
 }
 

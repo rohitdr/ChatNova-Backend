@@ -34,6 +34,7 @@ router.post("/createGroup", fetchUser, async (req, res) => {
       createdBy: id,
       inviteCode,
     });
+    io.to(id).emit("group_created",newGroup)
     return res.status(200).json({ status: true, message: newGroup });
   } catch (error) {
     console.log(error.message);

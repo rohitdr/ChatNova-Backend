@@ -7,9 +7,9 @@ const User = require('../Modals/User.cjs')
 const mongoose = require('mongoose')
 const Message = require('../Modals/Message.cjs');
 const { io } = require("../Socket/Socket.cjs");
-
-router.post("/createGroup", fetchUser, async (req, res) => {
-  try {
+const asyncHandler = require('../Utils/asyncHandler.cjs')
+router.post("/createGroup", fetchUser, asyncHandler( async (req, res) => {
+  
     const { name, participents, avtar, inviteCode } = req.body;
     const id = req.user.id;
     if (!name) {
@@ -36,14 +36,11 @@ router.post("/createGroup", fetchUser, async (req, res) => {
     });
     io.to(id).emit("group_created",newGroup)
     return res.status(200).json({ status: true, message: newGroup });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 // route to 
-router.post("/addMember", fetchUser,isGroupAdmin, async (req, res) => {
-  try {
+router.post("/addMember", fetchUser,isGroupAdmin,asyncHandler( async (req, res) => {
+ 
     const {  participents } = req.body;
       if (!participents || participents.length < 1) {
       return res
@@ -76,13 +73,10 @@ router.post("/addMember", fetchUser,isGroupAdmin, async (req, res) => {
    
    io.to(req.group._id.toString()).emit("member_added",{groupId:req.group._id.toString(),participents:conversation.participents})
     return res.status(200).json({ status: true, message: req.group });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
-router.post("/removeMember", fetchUser,isGroupAdmin, async (req, res) => {
-  try {
+ 
+}));
+router.post("/removeMember", fetchUser,isGroupAdmin, asyncHandler(async (req, res) => {
+
     const { participents } = req.body;
     const id = req.user.id;
     if (!participents || participents.length < 1) {
@@ -118,14 +112,11 @@ router.post("/removeMember", fetchUser,isGroupAdmin, async (req, res) => {
 
    io.to(req.group._id.toString()).emit("remove_member",{groupId:req.group._id.toString(),participents:conversation.participents})
     return res.status(200).json({ status: true, message:req.group  });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 //router to get group informaton group admin not required
-router.get("/getGroupById/:conversationId", fetchUser, async (req, res) => {
-  try {
+router.get("/getGroupById/:conversationId", fetchUser, asyncHandler(async (req, res) => {
+
     const id = req.user.id;
     const conversationId=req.params.conversationId
   if (!mongoose.Types.ObjectId.isValid(conversationId)) {
@@ -156,15 +147,12 @@ router.get("/getGroupById/:conversationId", fetchUser, async (req, res) => {
    
    
     return res.status(200).json({ status: true, message:conversation });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 
 // route to get all the groups on logged in user
-router.get("/allgroups", fetchUser, async (req, res) => {
-  try {
+router.get("/allgroups", fetchUser, asyncHandler(async (req, res) => {
+ 
     const id = req.user.id;
     
 
@@ -177,14 +165,11 @@ router.get("/allgroups", fetchUser, async (req, res) => {
 
    
     return res.status(200).json({ status: true, groups:groups });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+
+}));
 // route to update group information 
-router.put("/groupUpdate", fetchUser,isGroupAdmin, async (req, res) => {
-  try {
+router.put("/groupUpdate", fetchUser,isGroupAdmin,asyncHandler( async (req, res) => {
+  
      console.log("hello")
     const {name,image,inviteCode}=req.body
     let group = req.group
@@ -201,26 +186,20 @@ router.put("/groupUpdate", fetchUser,isGroupAdmin, async (req, res) => {
 
    
     return res.status(200).json({ status: true, message:group });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+
+}));
 // route to delete group
-router.delete("/delete", fetchUser,isGroupAdmin, async (req, res) => {
-  try {
+router.delete("/delete", fetchUser,isGroupAdmin,asyncHandler( async (req, res) => {
+  
       await Message.deleteMany({conversationId:req.body.groupId})
       await Conversation.findByIdAndDelete(req.body.groupId)
     return res.status(200).json({ status: true, message:"Group and Messages are deleted successfully" });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
+ 
+}));
 
 //route to find group by name
-router.get('/search', fetchUser,async(req,res)=>{
-    try{
+router.get('/search', fetchUser,asyncHandler(async(req,res)=>{
+  
         const currentId=req.user.id;
           const search = req.query.search || " "
       const groups = await Conversation.find({
@@ -232,11 +211,7 @@ router.get('/search', fetchUser,async(req,res)=>{
             return res.status(404).json({status:false,message:"No group found"})
         }
         return res.status(200).json({status:true,groups})
-    }
-     catch(error){
-          console.log(error.message)
-          return res.status(500).json({status:false,message:error.message})
-     }
-})
+  
+}))
 
 module.exports = router;

@@ -170,7 +170,7 @@ router.get("/allgroups", fetchUser, asyncHandler(async (req, res) => {
 // route to update group information 
 router.put("/groupUpdate", fetchUser,isGroupAdmin,asyncHandler( async (req, res) => {
   
-     console.log("hello")
+   
     const {name,image,inviteCode}=req.body
     let group = req.group
     if(name){
@@ -179,7 +179,7 @@ router.put("/groupUpdate", fetchUser,isGroupAdmin,asyncHandler( async (req, res)
     if(image){
       group.avtar=image
     }
-    console.log("hello")
+  
 
     await group.save()
     io.to(group._id.toString()).emit("group_update",group)

@@ -26,7 +26,7 @@ router.post('/createUser',[
       const {email,password,username}=req.body
       let existingUser = await User.findOne({
           $or:[{email},{username}]
-      })
+      }).select("email")
     
      if(existingUser){
           return res.status(409).json({status:false,message:existingUser.email === email ?"This email already exits Use new one":"This username already exists "})
@@ -63,7 +63,7 @@ router.post('/login',[
                  return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
           }
      const {email,password}=req.body
-      let user= await User.findOne({email:email})
+      let user= await User.findOne({email:email}).select("password refress_token")
       if(!user){
            return res.status(400).json({status:false,message:"Please use Correct correndentials"})
       }
@@ -147,7 +147,7 @@ router.put('/forgetPassword',[
                 return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
           }
           const {email,password,username}=req.body
-          let user = await User.findOne({email:email})
+          let user = await User.findOne({email:email}).select("username")
           if(!user){
               return res.status(404).json({status:false,message:"Use Correct Corredentials "})
           }
@@ -180,7 +180,7 @@ router.put('/updatePassword',[
           }
           const {oldPassword,newPassword}=req.body
           const userId=req.user.id
-          let user = await User.findById(userId)
+          let user = await User.findById(userId).select("password")
           if(!user){
               return res.status(401).json({status:false,message:"Please login again "})
           }
@@ -271,7 +271,7 @@ router.post('/deviceToken', fetchUser,asyncHandler(async(req,res)=>{
      
     const userId = req.user.id
      const {deviceToken}=req.body
-     const user = await User.findById(userId)
+     const user = await User.findById(userId).select("deviceTokens")
      if(!user){
           return res.status(404).json({status:false,message:"Please Login again"})
      }

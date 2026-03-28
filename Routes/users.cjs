@@ -10,13 +10,14 @@ const  asyncHandler  = require('../Utils/asyncHandler.cjs');
 router.get('/chattedUsers', fetchUser,asyncHandler( async(req,res)=>{
   
         const currentId=req.user.id;
+         const {limit,page}=req.query
         let currentchatters = await Conversation.find({
             type:"private",
             "participents.user":currentId,
             "lastMessage.text":{$exists:true},
       $expr:{$eq:[{$size:"$participents"},2]}
             
-        }).populate({path:"participents.user",model:"User",select:"name image username phone_number"}).sort({updatedAt:-1})
+        }).populate({path:"participents.user",model:"User",select:"name image username phone_number"}).sort({updatedAt:-1}).skip((page-1)*limit).limit(Number(limit)+1).lean()
     
         if(!currentchatters || currentchatters.length ===0){
             return res.status(200).json({status:true,users:[]})
@@ -32,7 +33,7 @@ router.get('/chattedUsers', fetchUser,asyncHandler( async(req,res)=>{
             
      
       return {
-        ...otheruser.toObject(),
+        ...otheruser,
         ConversationId:element._id,
         lastMessage:element.lastMessage
       };
@@ -40,7 +41,7 @@ router.get('/chattedUsers', fetchUser,asyncHandler( async(req,res)=>{
                  
         )
        
-        res.status(200).json({status:true,users})
+        res.status(200).json({status:true,users:users.slice(0,limit),hasMore : users.length>limit})
     
     
 }))
@@ -51,11 +52,23 @@ router.get('/search', fetchUser,asyncHandler(async(req,res)=>{
     
         const currentId=req.user.id;
           const search = req.query.search || " "
+          const conversations = await Conversation.find({
+            type:"private",
+            "participents.user":currentId
+          }).select("participents.user").lean()
+          const existingUserId = conversations.flatMap((con)=>
+            con.participents.map((p)=>p.user.toString())
+          .filter((p)=>p !== currentId.toString())
+          )
+          const objectIds = existingUserId.map(
+  (id) => new mongoose.Types.ObjectId(id)
+);
         const users = await User.find({
+           _id:{$nin:[...objectIds, new mongoose.Types.ObjectId(currentId)]},
             $and:[{
                   $or:[
-                    {username:{$regex:'.*'+search+'.*',$options:'i'}},
-                    {name:{$regex:'.*'+search+'.*',$options:'i'}}
+                    {username:{$regex:search,$options:'i'}},
+                    {name:{$regex:search,$options:'i'}}
              
                     
                   ]
@@ -64,7 +77,8 @@ router.get('/search', fetchUser,asyncHandler(async(req,res)=>{
             }
 
             ]
-        }).select("-password -email -refress_token -deviceTokens ")
+        }).select("-password -email -refress_token -deviceTokens ").limit(15).lean()
+       
 
         if(users.length === 0){
             return res.status(404).json({status:false,message:"No user found"})

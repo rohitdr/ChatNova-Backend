@@ -16,7 +16,7 @@ try{
 }
 catch(error)
 {
-    return res.status(500).json({status:false,message:error.message})
+    return res.status(401).json({status:false,message:error.message})
 }
 }
 

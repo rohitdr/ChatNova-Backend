@@ -12,6 +12,7 @@ router.post("/createGroup", fetchUser, asyncHandler( async (req, res) => {
   
     const { name, participents, avtar, inviteCode } = req.body;
     const id = req.user.id;
+    const user = await User.findById(id).select("name")
     if (!name) {
       return res
         .status(404)
@@ -34,8 +35,14 @@ router.post("/createGroup", fetchUser, asyncHandler( async (req, res) => {
       createdBy: id,
       inviteCode,
     });
+    const systemMsg= await Message.create({
+       senderId:id,
+      conversationId:newGroup._id.toString(),
+      text: `${user.name} created the group ${name}`,
+      type: "system",
+    })
     io.to(id).emit("group_created",newGroup)
-    return res.status(200).json({ status: true, message: newGroup });
+    return res.status(200).json({ status: true, message: "Group Created Successfully" });
  
 }));
 // route to 
@@ -154,13 +161,13 @@ router.get("/getGroupById/:conversationId", fetchUser, asyncHandler(async (req, 
 router.get("/allgroups", fetchUser, asyncHandler(async (req, res) => {
  
     const id = req.user.id;
-    
+    const {page,limit}=req.query
 
     // ✅ Fetch group
     const groups = await Conversation.find({
     type:"group",
     "participents.user":id
-  }).sort({lastActivity:-1})
+  }).sort({lastActivity:-1}).skip((page-1)*limit).limit(Number(limit)+1).lean()
      
 
    

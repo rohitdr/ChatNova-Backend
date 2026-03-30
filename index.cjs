@@ -19,8 +19,9 @@ app.use('/api/auth',require('./Routes/auth.cjs'))
 app.use('/api/messages',require('./Routes/messages.cjs'))
 app.use('/api/users',require('./Routes/users.cjs'))
 app.use('/api/groups',require('./Routes/group.cjs'))
-app.use(errorHandler)
+
 const PORT = process.env.PORT || 5000
+app.use(errorHandler)
 server.listen(PORT,()=>{
     console.log(`listening at port ${PORT}`)
 })

@@ -28,6 +28,10 @@ const userSocketmap={}
 
 io.on("connection",async(socket)=>{
     const userId = socket.handshake.query.userId 
+     if (!userId) {
+    socket.disconnect()
+    return
+     }
     await User.findByIdAndUpdate(userId,{
        onlineStatus:true
     })
@@ -71,6 +75,7 @@ const conversations = await Conversation.find({
    })
     socket.on("join_group",(groupId)=>{
      socket.join(groupId)
+     console.log("room joined"+ " " + groupId)
 
     })
 
@@ -92,7 +97,9 @@ const conversations = await Conversation.find({
        await updateReaction(data,io)
     } )
     socket.on("disconnect" ,async()=>{
-        delete userSocketmap[userId]
+      if (userSocketmap[userId] === socket.id) {
+  delete userSocketmap[userId]
+}
        io.emit("getOnlineUsers",Object.keys(userSocketmap))
        await User.findByIdAndUpdate(userId,{
        onlineStatus:false,

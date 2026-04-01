@@ -15,7 +15,7 @@ const chattedUsers=asyncHandler( async(req,res)=>{
             "lastMessage.text":{$exists:true},
       $expr:{$eq:[{$size:"$participents"},2]}
             
-        }).populate({path:"participents.user",model:"User",select:"name image username phone_number"}).sort({updatedAt:-1}).skip((page-1)*limit).limit(Number(limit)+1).lean()
+        }).populate({path:"participents.user",model:"User",select:"name image username phone_number"}).sort({updatedAt:-1}).lean()
     
         if(!currentchatters || currentchatters.length ===0){
             return res.status(200).json({status:true,users:[]})
@@ -38,8 +38,17 @@ const chattedUsers=asyncHandler( async(req,res)=>{
                 }
                  
         )
+       const limitNum = Number(limit)
+const pageNum = Number(page)
+
+const start = (pageNum - 1) * limitNum;
+const end = start + limitNum;
+
+const paginatedUsers = users.slice(start, end);
+
        
-        res.status(200).json({status:true,users:users.slice(0,limit),hasMore : users.length>limit})
+    
+        res.status(200).json({status:true,users:paginatedUsers,pageNum,hasMore: paginatedUsers.length>(limitNum-1)})
     
     
 })

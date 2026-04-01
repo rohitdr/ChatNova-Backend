@@ -58,9 +58,16 @@ const messageSchema = new mongoose.Schema({
       }
      ],
      replyTo:{
-      type:mongoose.Schema.Types.ObjectId,
-           ref:'message',
-           default:null
+       messageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "message"
+  },
+  text: String,
+  messageType: String,
+  senderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
      },
      deletedFor:[
       {

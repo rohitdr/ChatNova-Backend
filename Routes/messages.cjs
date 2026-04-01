@@ -3,7 +3,7 @@ const fetchUser = require("../Middleware/fetchUser.cjs");
 
 
 const router = express.Router();
-const { sendMessage, recieveMessage, sendFile, conversationId } = require("../Controllers/messages.cjs");
+const { sendMessage, recieveMessage, sendFile, conversationId, replyMessage } = require("../Controllers/messages.cjs");
 
 // route to send messages login required
 router.post("/sendMessage", fetchUser,sendMessage);

@@ -10,10 +10,20 @@ const  asyncHandler  = require("../Utils/asyncHandler.cjs");
 // route to send messages login required
 const sendMessage=asyncHandler(async (req, res) => {
   
-    const { receiverId, message, conversationId,tempId } = req.body;
+    const { receiverId, message, conversationId,tempId,replyTo } = req.body;
     const senderId = req.user.id;
     const sender = await User.findById(senderId)
     let conversation;
+    if (replyTo?.messageId) {
+  const originalMessage = await Message.findById(replyTo.messageId);
+
+  if (!originalMessage) {
+    return res.status(400).json({
+      status: false,
+      message: "Original message not found"
+    });
+  }
+}
     // if conversation id is their
     if (conversationId) {
       conversation = await Conversation.findById(conversationId);
@@ -40,16 +50,22 @@ const sendMessage=asyncHandler(async (req, res) => {
 const populatedConversation = await Conversation.findById(conversation._id).populate("participents.user","-password -email -refress_token -deviceTokens")
  
 
-let newMessage =await Message.create({
-      senderId:sender,
+let messageSaved =await Message.create({
+      senderId:senderId,
       conversationId:conversation._id,
       text: message,
       type: "text",
+      replyTo:replyTo || null
     });
+  
     conversation.lastMessage={
       text:message,
       sender:senderId,
-      createdAt:Date.now()
+      createdAt:Date.now(),
+      replyTo: replyTo ? {
+    text: replyTo.text,
+    type: replyTo.type
+  } : null
     }
     await conversation.save()
     const conversationToSend={
@@ -58,7 +74,11 @@ let newMessage =await Message.create({
         lastMessage:{
            text:message,
       sender:senderId,
-      createdAt:Date.now()
+      createdAt:Date.now(),
+         replyTo: replyTo ? {
+    text: replyTo.text,
+    type: replyTo.type
+  } : null
         }
     }
     const recievers = conversation.participents
@@ -67,22 +87,22 @@ let newMessage =await Message.create({
     recievers.forEach(element => {
       if(userSocketmap[element])
       {
-        const alreadydeliverd = newMessage.deliveredTo.some((d)=>
+        const alreadydeliverd = messageSaved.deliveredTo.some((d)=>
         d.user.toString() === element
         )
         if(!alreadydeliverd){
-          newMessage.deliveredTo.push({user:element,deliveredAt:Date.now()})
+          messageSaved.deliveredTo.push({user:element,deliveredAt:Date.now()})
         }
       }
        
     });
-         await newMessage.save()
+         await messageSaved.save()
 
     // if (receiver.deviceTokens?.length) {
     //   await sendNotification(message, sender.name, receiver);
     // }
       // }
-    
+      let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refress_token").lean()
     io.to(conversation._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
     io.to(receiverId).emit("newMessage",{...newMessage,tempId,conversationToSend})
  
@@ -103,7 +123,8 @@ const recieveMessage=asyncHandler(async (req, res) => {
 
     const id =req.user.id
     const {limit,page}=req.query
-  const conversationId = req.params.conversationId
+    const conversationId = req.params.conversationId
+    console.log(conversationId)
   const conversation = await Conversation.findById(conversationId)
   if(!conversation){
     return res.status(404).json({status:false,message:"Conversation not found"})
@@ -129,7 +150,7 @@ const recieveMessage=asyncHandler(async (req, res) => {
     const hasMore = messages.length>limit
      const finalmessages = hasMore?messages.slice(0,limit):messages
   
-    return res.status(200).json({ status: true, message:finalmessages,hasMore});
+    return res.status(200).json({ status: true, message:finalmessages,page:page,hasMore});
  
 });
 
@@ -231,6 +252,7 @@ const conversationId=asyncHandler(async (req, res) => {
     return res.status(200).json({ status: true, conversation: chat });
  
 });
+
 
 
 module.exports = {sendFile,sendMessage,recieveMessage,conversationId};

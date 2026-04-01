@@ -59,8 +59,20 @@ const conversations = await Conversation.find({
    )
 
    for (let msg of messages){
-    msg.deliveredTo.push({user:userId,deliveredAt:Date.now()})
-    await msg.save();
+    msg.deliveredTo = msg.deliveredTo || [];
+
+const alreadyDelivered = msg.deliveredTo.find(
+  (d) => d.user.toString() === userId
+);
+
+if (!alreadyDelivered) {
+  msg.deliveredTo.push({
+    user: userId,
+    deliveredAt: Date.now(),
+  });
+}
+
+await msg.save();
     io.to(msg.conversationId.toString()).emit("message_deliverd",{messageId:msg._id,deliveredTo:msg.deliveredTo})
    }
 

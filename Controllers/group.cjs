@@ -186,7 +186,7 @@ const getGroupById=asyncHandler(async (req, res) => {
    
    
    
-    return res.status(200).json({ status: true, message:conversation });
+    return res.status(200).json({ status: true, group:conversation });
  
 });
 

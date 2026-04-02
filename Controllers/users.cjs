@@ -59,19 +59,10 @@ const searchUser=asyncHandler(async(req,res)=>{
     
         const currentId=req.user.id;
           const search = req.query.search || " "
-          const conversations = await Conversation.find({
-            type:"private",
-            "participents.user":currentId
-          }).select("participents.user").lean()
-          const existingUserId = conversations.flatMap((con)=>
-            con.participents.map((p)=>p.user.toString())
-          .filter((p)=>p !== currentId.toString())
-          )
-          const objectIds = existingUserId.map(
-  (id) => new mongoose.Types.ObjectId(id)
-);
+     
+
         const users = await User.find({
-           _id:{$nin:[...objectIds, new mongoose.Types.ObjectId(currentId)]},
+         
             $and:[{
                   $or:[
                     {username:{$regex:search,$options:'i'}},

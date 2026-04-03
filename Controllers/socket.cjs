@@ -56,8 +56,11 @@ const markSeen=async({conversationId,userId},io)=>{
         const  existDelivered =  msg.deliveredTo?.some((d)=>
             d.user.toString() ===userId
     )
+     if (!msg.deliveredTo) {
+    msg.deliveredTo = [];
+  }
         if(!existDelivered){
-              msg.deliverdTo.push({user:userId,seenAt:Date.now()})
+              msg.deliveredTo.push({user:userId,seenAt:Date.now()})
         }
         msg.seenBy.push({user:userId,seenAt:Date.now()})
         await msg.save()

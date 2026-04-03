@@ -22,7 +22,7 @@ if(!admin){
 req.group=group
       next()
 }catch(error)
-{ console.log(error.message)
+{ console.log(error)
     return res.status(500).json({status:false,message:error.message})
 }
 

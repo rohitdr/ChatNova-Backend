@@ -3,7 +3,7 @@ const fetchUser = require("../Middleware/fetchUser.cjs");
 const router = express.Router();
 const isGroupAdmin  = require("../Middleware/isGroupAdmin.cjs");
 
-const { createGroup, addMember, removeMember, getGroupById, allGroup, updateGroup, deleteGroup, searchGroup } = require("../Controllers/group.cjs");
+const { createGroup, addMember, removeMember, getGroupById, allGroup, updateGroup, deleteGroup, searchGroup, leaveGroup } = require("../Controllers/group.cjs");
 
 router.post("/createGroup", fetchUser,createGroup);
 // route to 
@@ -21,5 +21,6 @@ router.delete("/delete", fetchUser,isGroupAdmin,deleteGroup);
 
 //route to find group by name
 router.get('/search', fetchUser,searchGroup)
+router.patch('/leaveGroup',fetchUser,leaveGroup)
 
 module.exports = router;

@@ -82,19 +82,28 @@ const addMember=asyncHandler( async (req, res) => {
        ...conversation.toObject(),
         ConversationId:conversation._id.toString(),
         lastMessage:{
-          text: `Admin added ${user.join( " ,")}`,
+         text: `Admin added ${user.map(u=>u.name).join( " , ")}`,
       sender:req.user.id,
       createdAt:Date.now()
         }
     }
-  console.log(user)
+     conversation.lastMessage={
+    text: `Admin added ${user.map(u=>u.name).join( " , ")}`,
+      sender:req.user.id,
+      createdAt:Date.now()
+        }
+        conversation.save()
     const systemMsg= await Message.create({
        senderId:req.user.id,
       conversationId:conversation._id.toString(),
  text: `Admin added ${user.map(u=>u.name).join( " , ")}`,
       type: "system",
     })
-  io.to(req.group._id.toString()).emit("newMessage",{...systemMsg,tempId,conversationToSend})
+   user.forEach(element => {
+    io.to(element._id.toString()).emit("added_to_group",{groupId:req.group._id.toString(),conversationToSend})
+   });
+   
+   io.to(req.group._id.toString()).emit("newMessage",{...systemMsg,tempId,conversationToSend})
    io.to(req.group._id.toString()).emit("member_added",{groupId:req.group._id.toString(),participents:conversation.participents})
     return res.status(200).json({ status: true, message: req.group });
  
@@ -138,11 +147,17 @@ const removeMember=asyncHandler(async (req, res) => {
        ...conversation.toObject(),
         ConversationId:conversation._id.toString(),
         lastMessage:{
-          text: `Admin removed ${user.join( " ,")}`,
+ text: `Admin removed ${user.map(u=>u.name).join( " , ")}`,
       sender:req.user.id,
       createdAt:Date.now()
         }
     }
+    conversation.lastMessage={
+ text: `Admin removed ${user.map(u=>u.name).join( " , ")}`,
+      sender:req.user.id,
+      createdAt:Date.now()
+        }
+        conversation.save()
  
     const systemMsg= await Message.create({
        senderId:req.user.id,
@@ -150,6 +165,10 @@ const removeMember=asyncHandler(async (req, res) => {
  text: `Admin removed ${user.map(u=>u.name).join( " , ")}`,
       type: "system",
     })
+
+     user.forEach(element => {
+    io.to(element._id.toString()).emit("removed_from_group",{groupId:req.group._id.toString()})
+   });
   io.to(req.group._id.toString()).emit("newMessage",{...systemMsg,tempId,conversationToSend})
    io.to(req.group._id.toString()).emit("remove_member",{groupId:req.group._id.toString(),participents:conversation.participents})
     return res.status(200).json({ status: true, message:req.group  });
@@ -259,12 +278,62 @@ const updateGroup=asyncHandler( async (req, res) => {
 });
 // route to delete group
 const deleteGroup=asyncHandler( async (req, res) => {
-  
+   
       await Message.deleteMany({conversationId:req.body.groupId})
       await Conversation.findByIdAndDelete(req.body.groupId)
+     req.group.participents.forEach((p)=>{
+      io.to(p.user.toString()).emit("group_deleted",{groupId:req.body.groupId})
+     }
+    
+    )
+  
     return res.status(200).json({ status: true, message:"Group and Messages are deleted successfully" });
+});
+
+//route to leave a group
+const leaveGroup=asyncHandler( async (req, res) => {
+  
+  const group = await Conversation.findById(req.body.groupId)
+  const user = await User.findById(req.user.id)
+  if(!user){
+      return res.status(401).json({status:false,message:"Please login again"})
+  }
+  if(!group){
+    return res.status(404).json({status:false,message:"Group Not found"})
+  }
+   const isMember =  group.participents.some((p)=>
+    p.user.toString()===req.user.id && p.role==="member"
+   )
+   
+   if(!isMember){
+  return res.status(404).json({status:false,message:"You are Not a Member of the Group"})
+   }
+await Conversation.findByIdAndUpdate(req.body.groupId,{$pull:{participents:{user:req.user.id}}})
+ const populatedConversation = await Conversation.findById(group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
+  const updateText = `${user.name} Leaved the group`;
+     const conversationToSend={
+       ...populatedConversation.toObject(),
+        ConversationId:group._id,
+        lastMessage:{
+          text: updateText,
+      sender:req.user.id,
+      createdAt:Date.now()
+        }
+    }
+    const systemMsg= await Message.create({
+       senderId:req.user.id,
+      conversationId:group._id.toString(),
+ text: updateText,
+      type: "system",
+    })
+  io.to(group._id.toString()).emit("newMessage",{...systemMsg,tempId:"null",conversationToSend})
+    io.to(group._id.toString()).emit("group_update",populatedConversation)
+    io.to(req.user.id).emit("group_leaved",{groupId:group._id.toString()})
+   
+    return res.status(200).json({ status: true, message:"You Leaved successfully" });
  
 });
+
 
 //route to find group by name
 const searchGroup=asyncHandler(async(req,res)=>{
@@ -283,4 +352,4 @@ const searchGroup=asyncHandler(async(req,res)=>{
   
 })
 
-module.exports = {searchGroup,deleteGroup,updateGroup,allGroup,getGroupById,addMember,removeMember,createGroup};
+module.exports = {searchGroup,deleteGroup,updateGroup,allGroup,getGroupById,addMember,removeMember,createGroup,leaveGroup};

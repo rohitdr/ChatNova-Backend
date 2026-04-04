@@ -1,6 +1,7 @@
 
 const Message = require('../Modals/Message.cjs')
 const { io } = require('../Socket/Socket.cjs')
+const Conversation = require('../Modals/Conversation.cjs')
 
 const updateReaction =async ({messageId,conversationId,emoji,userId},io)=>{
 
@@ -40,33 +41,26 @@ const updateReaction =async ({messageId,conversationId,emoji,userId},io)=>{
   
 }
 const markSeen=async({conversationId,userId},io)=>{
-
-    const messages = await Message.find({
-        
-            conversationId:conversationId,
-        
+const now = new Date()
+    await Message.updateMany({
+        conversationId,
         senderId:{$ne:userId},
-        seenBy:{
-            $not:{
-                $elemMatch:{user:userId}
-            }
-        }}
-    )
-    for (let msg of messages){
-        const  existDelivered =  msg.deliveredTo?.some((d)=>
-            d.user.toString() ===userId
-    )
-     if (!msg.deliveredTo) {
-    msg.deliveredTo = [];
-  }
-        if(!existDelivered){
-              msg.deliveredTo.push({user:userId,seenAt:Date.now()})
-        }
-        msg.seenBy.push({user:userId,seenAt:Date.now()})
-        await msg.save()
-        io.to(conversationId).emit("message_seen",{messageId:msg._id,seenBy:msg.seenBy})
-     
+        "seenBy.user":{$ne:userId}
+    },
+   {
+    $addToSet:{
+        deliveredTo:{user:userId,deliveredAt:now},
+        seenBy:{user:userId,seenAt:now}
     }
+   }
+)
+ io.to(conversationId).emit("message_seen",{conversationId,userId,seenAt:now})
+      const conversation = await Conversation.updateOne(
+            {_id:conversationId,"participents.user":userId},
+       {$set:{"participents.$.lastSeen":now,
+         "participents.$.unreadCount":0
+        }}
+        )
 
 }
 

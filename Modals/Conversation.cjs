@@ -14,6 +14,14 @@ const conversationSchema = new mongoose.Schema({
         required:function (){
             return this.parent().parent().type==="group"
         }
+    },
+    lastSeen:{
+        type:Date,
+        default:Date.now()
+    },
+    unreadCount:{
+        type:Number,
+        default:0
     }
 }],
    

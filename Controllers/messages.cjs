@@ -67,6 +67,12 @@ let messageSaved =await Message.create({
     type: replyTo.type
   } : null
     }
+    conversation.participents.map((p)=>{
+      if(p.user.toString()!==senderId){
+        p.unreadCount = (p.unreadCount || 0)+1
+      }
+      return p
+    })
     await conversation.save()
     const conversationToSend={
        ...populatedConversation.toObject(),
@@ -105,14 +111,6 @@ let messageSaved =await Message.create({
       let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refress_token").lean()
     io.to(conversation._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
     io.to(receiverId).emit("newMessage",{...newMessage,tempId,conversationToSend})
- 
-  
-
- 
-    // io.to(conversation._id.toString()).emit("message_delivered",{messageId:newMessage._id,deliveredTo:newMessage.deliveredTo})
-  
-  
-
 
     return res.status(200).json({ status: true, message: newMessage });
  

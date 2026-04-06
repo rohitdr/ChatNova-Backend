@@ -27,13 +27,17 @@ const chattedUsers=asyncHandler( async(req,res)=>{
                     p => p.user._id.toString() !== currentId.toString()
                   
                  )
+                   const me = element.participents.find(
+    p => p.user._id.toString() === currentId.toString()
+  );
 
             
      
       return {
         ...otheruser,
         ConversationId:element._id,
-        lastMessage:element.lastMessage
+        lastMessage:element.lastMessage,
+        unreadCount:me?.unreadCount ||0
       };
                 }
                  

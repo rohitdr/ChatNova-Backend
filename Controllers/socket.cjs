@@ -1,6 +1,7 @@
 
 const Message = require('../Modals/Message.cjs')
-const { io } = require('../Socket/Socket.cjs')
+
+
 const Conversation = require('../Modals/Conversation.cjs')
 
 const updateReaction =async ({messageId,conversationId,emoji,userId},io)=>{
@@ -28,7 +29,7 @@ const updateReaction =async ({messageId,conversationId,emoji,userId},io)=>{
     }
    }
    else{
-    console.log("no")
+  
     message.reaction.push({user:userId,emoji:emoji})
    }
      await message.save()
@@ -41,6 +42,7 @@ const updateReaction =async ({messageId,conversationId,emoji,userId},io)=>{
   
 }
 const markSeen=async({conversationId,userId},io)=>{
+
 const now = new Date()
     await Message.updateMany({
         conversationId,
@@ -54,8 +56,9 @@ const now = new Date()
     }
    }
 )
+
  io.to(conversationId).emit("message_seen",{conversationId,userId,seenAt:now})
-      const conversation = await Conversation.updateOne(
+    await Conversation.updateOne(
             {_id:conversationId,"participents.user":userId},
        {$set:{"participents.$.lastSeen":now,
          "participents.$.unreadCount":0

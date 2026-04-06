@@ -3,17 +3,16 @@ const bcrypt = require('bcryptjs')
 const User= require('../Modals/User.cjs')
 const jwt = require('jsonwebtoken')
 const {validationResult}=require('express-validator');
-const fetchUser = require('../Middleware/fetchUser.cjs');
 const asyncHandler = require('../Utils/asyncHandler.cjs');
-const { io } = require('../Socket/Socket.cjs');
 const cloudinary = require('../Config/Cloudinary.cjs');
+const { getIo } = require('../Socket/socketInstance.cjs');
 
 
 
 
 //path to create a user, not required access token
 const createUser =asyncHandler( async(req,res)=>{
-  
+
      let validationresult = validationResult(req)
           if(!validationresult.isEmpty()){
                  return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
@@ -126,15 +125,15 @@ const refress=asyncHandler (async(req,res)=>{
 
 const logout=asyncHandler(async(req,res)=>{
    
-         
+           if (!req.user?._id) {
+      return res.status(200).send({ success: true }); // already logged out
+    }
      const id = req.user.id 
      let user = await User.findById(id)
       if(user){
            user = await User.findByIdAndUpdate({_id:id},{$set:{refress_token:null}})
       }
-     if(!user){
-        return res.status(404).json({status:false,message:"Something went wrong"})
-     }
+   
      user = await User.findByIdAndUpdate({_id:id},{$set:{onlineStatus:false}})
      //for production
      // res.clearCookie('refress_token')
@@ -216,7 +215,7 @@ const getUser=asyncHandler(async(req,res)=>{
 })
 
 const update=asyncHandler(async(req,res)=>{
-      
+      const io=getIo()
 
          const {name,email,username,image,phone_number}=req.body
             const id = req.user.id 

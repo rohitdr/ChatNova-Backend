@@ -5,11 +5,12 @@ const Conversation = require("../Modals/Conversation.cjs");
 const User = require('../Modals/User.cjs')
 const mongoose = require('mongoose')
 const Message = require('../Modals/Message.cjs');
-const { io } = require("../Socket/Socket.cjs");
+const { getIo } = require('../Socket/socketInstance.cjs');
+
 const asyncHandler = require('../Utils/asyncHandler.cjs')
 const cloudinary = require("../Config/Cloudinary.cjs")
 const createGroup= asyncHandler( async (req, res) => {
-  
+  const io=getIo()
     const { name, participents, avtar, inviteCode } = req.body;
     const id = req.user.id;
     const user = await User.findById(id).select("name")
@@ -47,7 +48,7 @@ const createGroup= asyncHandler( async (req, res) => {
 });
 // route to 
 const addMember=asyncHandler( async (req, res) => {
- 
+ const io=getIo()
     const {  participents,tempId } = req.body;
       if (!participents || participents.length < 1) {
       return res
@@ -109,7 +110,7 @@ const addMember=asyncHandler( async (req, res) => {
  
 });
 const removeMember=asyncHandler(async (req, res) => {
-
+   const io=getIo()
     const { participents,tempId } = req.body;
     const id = req.user.id;
     if (!participents || participents.length < 1) {
@@ -228,7 +229,7 @@ const allGroup=asyncHandler(async (req, res) => {
 });
 // route to update group information 
 const updateGroup=asyncHandler( async (req, res) => {
-  
+  const io=getIo()
    
     const {name,image,inviteCode}=req.body
     let group = req.group
@@ -278,7 +279,7 @@ const updateGroup=asyncHandler( async (req, res) => {
 });
 // route to delete group
 const deleteGroup=asyncHandler( async (req, res) => {
-   
+   const io=getIo()
       await Message.deleteMany({conversationId:req.body.groupId})
       await Conversation.findByIdAndDelete(req.body.groupId)
      req.group.participents.forEach((p)=>{
@@ -292,7 +293,7 @@ const deleteGroup=asyncHandler( async (req, res) => {
 
 //route to leave a group
 const leaveGroup=asyncHandler( async (req, res) => {
-  
+  const io=getIo()
   const group = await Conversation.findById(req.body.groupId)
   const user = await User.findById(req.user.id)
   if(!user){

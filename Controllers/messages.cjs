@@ -1,18 +1,22 @@
 
 const Conversation = require("../Modals/Conversation.cjs");
 const Message = require("../Modals/Message.cjs");
-const { userSocketmap, io } = require("../Socket/Socket.cjs");
+
+
+const { getIo } = require('../Socket/socketInstance.cjs');
+
 
 
 const User = require("../Modals/User.cjs");
 const  asyncHandler  = require("../Utils/asyncHandler.cjs");
+const { onlineUsers } = require("../Socket/socketHandler.cjs");
 
 // route to send messages login required
 const sendMessage=asyncHandler(async (req, res) => {
-  
-    const { receiverId, message, conversationId,tempId,replyTo } = req.body;
+  const io=getIo()
+    const {  message, conversationId,tempId,replyTo } = req.body;
     const senderId = req.user.id;
-    const sender = await User.findById(senderId)
+
     let conversation;
     if (replyTo?.messageId) {
   const originalMessage = await Message.findById(replyTo.messageId);
@@ -91,7 +95,7 @@ let messageSaved =await Message.create({
     .map((p)=>p.user.toString() )
     .filter((p)=>p !== senderId)
     recievers.forEach(element => {
-      if(userSocketmap[element])
+      if(onlineUsers.has(element))
       {
         const alreadydeliverd = messageSaved.deliveredTo.some((d)=>
         d.user.toString() === element
@@ -109,8 +113,12 @@ let messageSaved =await Message.create({
     // }
       // }
       let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refress_token").lean()
+      //sending message to all the participents of group
+conversation.participents.forEach((p)=>{
+    io.to(p.user.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
+})
     io.to(conversation._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
-    io.to(receiverId).emit("newMessage",{...newMessage,tempId,conversationToSend})
+   
 
     return res.status(200).json({ status: true, message: newMessage });
  
@@ -122,7 +130,7 @@ const recieveMessage=asyncHandler(async (req, res) => {
     const id =req.user.id
     const {limit,page}=req.query
     const conversationId = req.params.conversationId
-    console.log(conversationId)
+  
   const conversation = await Conversation.findById(conversationId)
   if(!conversation){
     return res.status(404).json({status:false,message:"Conversation not found"})
@@ -154,7 +162,7 @@ const recieveMessage=asyncHandler(async (req, res) => {
 
 // route for sending uploading images files and videos
 const sendFile=asyncHandler( async (req, res) => {
-  
+  const io=getIo()
     const { type, url, publicId, bytes,tempId } = req.body;
        const senderId=req.user.id
        const sender = await User.findById(senderId)
@@ -162,8 +170,8 @@ const sendFile=asyncHandler( async (req, res) => {
     if (!chat) {
      return res.status(404).json({status:false,message:"Conversation id is not valid"})
     }
-    let newMessage = new Message({
-      senderId:sender,
+    let messageSaved = new Message({
+      senderId:senderId,
       conversationId: chat._id,
       type,
       media: {
@@ -171,17 +179,24 @@ const sendFile=asyncHandler( async (req, res) => {
         publicId,
         bytes,
       },
+      
     });
     
     //socket
 const populatedConversation = await Conversation.findById(chat._id).populate("participents.user","-password -email -refress_token -deviceTokens")
 
-    await  newMessage.save()
 chat.lastMessage={
      text:`New ${type}`,
       sender:senderId,
-      createdAt:Date.now()
+      createdAt:Date.now(),
+     
     }
+     chat.participents.map((p)=>{
+      if(p.user.toString()!==senderId){
+        p.unreadCount = (p.unreadCount || 0)+1
+      }
+      return p
+    })
     await chat.save()
     const conversationToSend={
        ...populatedConversation.toObject(),
@@ -189,25 +204,27 @@ chat.lastMessage={
         lastMessage:{
           text:`New ${type}`,
       sender:senderId,
-      createdAt:Date.now()
+      createdAt:Date.now(),
+    
         }
     }
      const recievers = chat.participents
     .map((p)=>p.user.toString() )
     .filter((p)=>p !== senderId)
     recievers.forEach(element => {
-      if(userSocketmap[element])
+      if(onlineUsers.has(element))
       {
-        const alreadydeliverd = newMessage.deliveredTo.some((d)=>
+        const alreadydeliverd = messageSaved.deliveredTo.some((d)=>
         d.user.toString() === element
         )
         if(!alreadydeliverd){
-          newMessage.deliveredTo.push({user:element,deliveredAt:Date.now()})
+          messageSaved.deliveredTo.push({user:element,deliveredAt:Date.now()})
         }
       }
        
     });
-         await newMessage.save()
+         await messageSaved.save()
+         let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refress_token").lean()
   // chat.participents.forEach(  p=>{
       // if(p.user.toString() !== senderId){
   io.to(chat._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})

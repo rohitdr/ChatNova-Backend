@@ -127,10 +127,40 @@ conversation.participents.forEach((p)=>{
 //route to receive message login required
 const recieveMessage=asyncHandler(async (req, res) => {
 
-    const id =req.user.id
-    const {limit,page}=req.query
-    const conversationId = req.params.conversationId
+  //   const id =req.user.id
+  //   const {limit,page}=req.query
+  //   const conversationId = req.params.conversationId
   
+  // const conversation = await Conversation.findById(conversationId)
+  // if(!conversation){
+  //   return res.status(404).json({status:false,message:"Conversation not found"})
+  // }
+  // const isMember = conversation.participents.some(p=>
+  //   p.user.toString()===id
+  // )
+  //  if(!isMember){
+  //      return res
+  //         .status(404)
+  //         .json({ status: false, message: "Not allowed" });
+  //    }
+  //    const messages = await Message.find({
+  //     conversationId:conversationId
+  //    }).populate("senderId","-password -refress_token -email -deviceTokens").sort({createdAt:-1})
+  //    .skip((page-1)*limit)
+  //    .limit(Number(limit+1))
+  //    if(!messages){
+  //       return res
+  //         .status(404)
+  //         .json({ status: false, message: "Messages are not avialable" });
+  //    }
+  //   const hasMore = messages.length>limit
+  //    const finalmessages = hasMore?messages.slice(0,limit):messages
+    const id =req.user.id
+    const {cursor}=req.query
+    const conversationId = req.params.conversationId
+   const query = {
+    conversationId
+   }
   const conversation = await Conversation.findById(conversationId)
   if(!conversation){
     return res.status(404).json({status:false,message:"Conversation not found"})
@@ -143,20 +173,23 @@ const recieveMessage=asyncHandler(async (req, res) => {
           .status(404)
           .json({ status: false, message: "Not allowed" });
      }
-     const messages = await Message.find({
-      conversationId:conversationId
-     }).populate("senderId","-password -refress_token -email -deviceTokens").sort({createdAt:-1})
-     .skip((page-1)*limit)
-     .limit(Number(limit+1))
+     if(cursor){
+      const date = new Date(cursor)
+      if(!isNaN(date.getTime())){
+        query.createdAt = {$lt:date}
+      }
+     }
+     const messages = await Message.find(query).populate("senderId","-password -refress_token -email -deviceTokens").sort({createdAt:-1})
+        .limit(20).lean()
      if(!messages){
         return res
           .status(404)
           .json({ status: false, message: "Messages are not avialable" });
      }
-    const hasMore = messages.length>limit
-     const finalmessages = hasMore?messages.slice(0,limit):messages
+    const nextCursor = messages.length>0?messages[messages.length-1].createdAt:null
+  //    const finalmessages = hasMore?messages.slice(0,limit):messages
   
-    return res.status(200).json({ status: true, message:finalmessages,page:page,hasMore});
+    return res.status(200).json({ status: true, message:messages,nextCursor});
  
 });
 

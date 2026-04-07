@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
     default:7451256253
 
   },
-  refress_token:{
+  refreshToken:{
 type:String
   },
   onlineStatus:{

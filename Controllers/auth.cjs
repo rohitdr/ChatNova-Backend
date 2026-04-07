@@ -10,67 +10,67 @@ const { getIo } = require('../Socket/socketInstance.cjs');
 
 
 
-//path to create a user, not required access token
+// -------------CREATE USER-------------------
 const createUser =asyncHandler( async(req,res)=>{
 
-     let validationresult = validationResult(req)
-          if(!validationresult.isEmpty()){
-                 return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
+     let errors = validationResult(req)
+          if(!errors.isEmpty()){
+                 return res.status(400).json({ status:false,message:errors.array()[0].msg})
           }
      
       const {email,password,username}=req.body
       let existingUser = await User.findOne({
           $or:[{email},{username}]
-      }).select("email")
+      }).select("email username")
     
      if(existingUser){
-          return res.status(409).json({status:false,message:existingUser.email === email ?"This email already exits Use new one":"This username already exists "})
+         const message= existingUser.email === email ?"This email already exits Use new one":"This username already exists "
+          return res.status(409).json({status:false,message})
      }
     
 
       const salt = await bcrypt.genSalt(10);
-      const securePassword = await bcrypt.hash(password,salt) 
+      const hashedPassowrd = await bcrypt.hash(password,salt) 
          
      let  user = await User.create({
           email,
-          password:securePassword,
+          password:hashedPassowrd,
           username
        })
-     const data={
+     const payload={
           id:user.id
       }
- 
-      const refress_token=jwt.sign(data,process.env.REFRESS_SECRET,{expiresIn:"7d"})
+
+      const refreshToken =jwt.sign(payload,process.env.REFRESS_SECRET,{expiresIn:"7d"})
    
-      const access_token=jwt.sign(data,process.env.ACCESS_SECRET,{expiresIn:"7m"})
-         await User.updateOne({_id:user.id},{$set:{refress_token,onlineStatus:true}});
-       return res.status(200).json({status:true,access_token,refress_token})
+      const accessToken =jwt.sign(payload,process.env.ACCESS_SECRET,{expiresIn:"7m"})
+         await User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
+       return res.status(200).json({status:true,accessToken,refreshToken})
     
 })
-//path to login for the user
+// -------------------LOGIN ----------------------------
 const login=asyncHandler(async(req,res)=>{
       
        
-               let validationresult = validationResult(req)
-          if(!validationresult.isEmpty()){
-                 return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
+               let errors = validationResult(req)
+          if(!errors.isEmpty()){
+                 return res.status(400).json({ status:false,message:errors.array()[0].msg})
           }
      const {email,password}=req.body
       let user= await User.findOne({email:email}).select("-deviceTokens")
-      if(!user){
+      if(!user || !(await bcrypt.compare(password,user.password))){
            return res.status(400).json({status:false,message:"Please use Correct correndentials"})
       }
-      let passCompare= await bcrypt.compare(password,user.password)
-      if(!passCompare){
-             return res.status(400).json({status:false,message:"Please use Correct correndentials"})
-      }
-      const data={
+      const payload={
           id:user.id
       }
  
-      const refress_token=jwt.sign(data,process.env.REFRESS_SECRET,{expiresIn:"7d"})
+      const refreshToken=jwt.sign(payload,process.env.REFRESS_SECRET,{expiresIn:"7d"})
    
-      const access_token=jwt.sign(data,process.env.ACCESS_SECRET,{expiresIn:"7m"})
+      const accessToken=jwt.sign(payload,process.env.ACCESS_SECRET,{expiresIn:"7m"})
+      if(user.refreshToken !== refreshToken){
+      await User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
+       }
       const userToSend = {
          
     _id: user._id.toString(),
@@ -85,80 +85,63 @@ const login=asyncHandler(async(req,res)=>{
       }
       //for production
      //  res.cookie("refress_token",refress_token,{httpOnly:false,sameSite:"lax",secure:false,path:'/'})
-       if(user.refress_token !== refress_token){
-      await User.updateOne({_id:user.id},{$set:{refress_token,onlineStatus:true}});
-       }
-     return res.status(200).json({status:true,userToSend,access_token,refress_token})
+       
+     return res.status(200).json({status:true,userToSend,accessToken,refreshToken})
     
          
 })
-// // route to get new access token from refress token when it expires
+// -----------------------REFRESH ACCESS TOKEN ------------------------------------
 const refress=asyncHandler (async(req,res)=>{
 
       const authHeader = req.headers.authorization
     
-      if(!authHeader){
-           return res.status(401).json({status:false,message:"Please login again to continue"})
+      if(!authHeader || !authHeader.startsWith("Bearer ")){
+           return res.status(401).json({status:false,message:"Please login again "})
       }
-      const refress_token=authHeader.split(" ")[1]
-      const data = jwt.verify(refress_token,process.env.REFRESS_SECRET)
-      let user = await User.findById(data.id).select("refress_token")
+      const refreshToken=authHeader.split(" ")[1].trim()
+      const decoded = jwt.verify(refreshToken,process.env.REFRESS_SECRET)
+      let user = await User.findById(decoded.id).select("refreshToken")
 
-      if(!user){
-             return res.status(401).json({status:false,message:"User Not Found"})
+      if(!user || user.refreshToken !== refreshToken){
+             return res.status(401).json({status:false,message:"Invalid refresh token"})
       }
-      if(user.refress_token !== refress_token){
-             return res.status(401).json({status:false,message:"Please use a valid refress token"})
-      }
-      const userId = {
-          id:data.id
-      }
-      const access_token = jwt.sign(userId,process.env.ACCESS_SECRET,{expiresIn:"7m"})
-       return res.status(200).json({status:true,access_token})
+      
+      const accessToken = jwt.sign({id:decoded.id},process.env.ACCESS_SECRET,{expiresIn:"7m"})
+       return res.status(200).json({status:true,accessToken})
       
 
 })
 
 
 
-// // route to login access token required
+//-------------LOGOUT ------------------
 
-const logout=asyncHandler(async(req,res)=>{
-   
-           if (!req.user?._id) {
-      return res.status(200).send({ success: true }); // already logged out
-    }
-     const id = req.user.id 
-     let user = await User.findById(id)
-      if(user){
-           user = await User.findByIdAndUpdate({_id:id},{$set:{refress_token:null}})
-      }
-   
-     user = await User.findByIdAndUpdate({_id:id},{$set:{onlineStatus:false}})
-     //for production
-     // res.clearCookie('refress_token')
-     return res.status(200).json({status:true,message:"User logout Successfully"})
-    
-})
+const logout = asyncHandler(async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(200).json({ status: true, message: "Already logged out" });
+
+    await User.findByIdAndUpdate(userId, { $set: { refreshToken: null, onlineStatus: false } });
+    return res.status(200).json({ status: true, message: "User logged out successfully" });
+});
+
+// ------------------FORGET PASSWORD -------------------
 const forgetPassowrd=asyncHandler(async(req,res)=>{
         
-               let validationresult = validationResult(req)
-          if(!validationresult.isEmpty()){
-                return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
+               let errors = validationResult(req)
+          if(!errors.isEmpty()){
+                return res.status(400).json({ status:false,message:errors.array()[0].msg})
           }
           const {email,password,username}=req.body
           let user = await User.findOne({email:email}).select("username")
-          if(!user){
+          if(!user || username!==user.username){
               return res.status(404).json({status:false,message:"Use Correct Corredentials "})
           }
-          if (username!==user.username){
-                 return res.status(404).json({status:false,message:"Use Correct Corredentials "})
-          }
+          
           const salt = await bcrypt.genSalt(10)
-          const updatePassword = await bcrypt.hash(password,salt)
+          const hashedPassowrd = await bcrypt.hash(password,salt)
            user = await User.updateOne(
                {_id:user.id},
-               {$set:{password:updatePassword}}
+               {$set:{password:hashedPassowrd}}
            )
           
           return res.status(200).json({status:true,message:"password changed successfully"})
@@ -168,28 +151,28 @@ const forgetPassowrd=asyncHandler(async(req,res)=>{
 
          
 })
-//route to update password of login user no authentication required
+// -----------------------UPDATE PASSWORD ----------------------------
 const updatePassword=asyncHandler(async(req,res)=>{
       
-               let validationresult = validationResult(req)
-          if(!validationresult.isEmpty()){
-                return res.status(400).json({ status:false,message:validationresult.array()[0].msg})
+               let errors = validationResult(req)
+          if(!errors.isEmpty()){
+                return res.status(400).json({ status:false,message:errors.array()[0].msg})
           }
           const {oldPassword,newPassword}=req.body
-          const userId=req.user.id
-          let user = await User.findById(userId).select("password")
+         
+          let user = await User.findById(req.user.id).select("password")
           if(!user){
               return res.status(401).json({status:false,message:"Please login again "})
           }
-          let comparpass = await bcrypt.compare(oldPassword,user.password)
-          if(!comparpass){
+          let isMatch = await bcrypt.compare(oldPassword,user.password)
+          if(!isMatch){
                return res.status(400).json({status:false,message:"Please use the correct old password "})
           }
           const salt = await bcrypt.genSalt(10)
-          const changedPassowrd = await bcrypt.hash(newPassword,salt)
-           user = await User.updateOne(
+          const changedPassword = await bcrypt.hash(newPassword,salt)
+           await User.updateOne(
                {_id:user.id},
-               {$set:{password:changedPassowrd}}
+               {$set:{password:changedPassword}}
            )
           
           return res.status(200).json({status:true,message:"password changed successfully"})
@@ -199,11 +182,11 @@ const updatePassword=asyncHandler(async(req,res)=>{
 
 })
           
-// route to get userDetails token required
+// --------------------GET USER-------------------
 const getUser=asyncHandler(async(req,res)=>{
     
-            const id = req.user.id 
-            const user = await User.findById(id).select("-password -refress_token -deviceTokens").lean()
+          
+            const user = await User.findById(req.user.id).select("-password -refreshToken -deviceTokens").lean()
             if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
             }
@@ -213,7 +196,7 @@ const getUser=asyncHandler(async(req,res)=>{
        
 
 })
-
+//-----------------UPDATE USER ---------------------
 const update=asyncHandler(async(req,res)=>{
       const io=getIo()
 
@@ -223,26 +206,26 @@ const update=asyncHandler(async(req,res)=>{
               if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
             }
-             let newUser ={}
+             let updatedData ={}
              if(name){
-               newUser.name = name
+               updatedData.name = name
              }
              if(email){
-               newUser.email = email
+               updatedData.email = email
                let userbyemail = await User.findOne({email:email})
                if(userbyemail && userbyemail._id.toString() !== id){
                       return res.status(409).json({status:false,message:"Email already exist "})
                }
              }
              if(username){
-               newUser.username = username
+               updatedData.username = username
                let userbyusername = await User.findOne({username:username})
                if(userbyusername && userbyusername._id.toString() !== id){
                     return res.status(409).json({status:false,message:"username already taken"})
                }
              }
              if(phone_number){
-               newUser.phone_number = phone_number
+               updatedData.phone_number = phone_number
                let userbynumber = await User.findOne({phone_number:phone_number})
                if(userbynumber && userbynumber._id.toString() !== id){
                    return res.status(409).json({status:false,message:"Phone number is already taken"})
@@ -252,10 +235,10 @@ const update=asyncHandler(async(req,res)=>{
                if(user.image?.publicId){
               await cloudinary.uploader.destroy(user.image.publicId)
                }
-               newUser.image=image
+               updatedData.image=image
              }
             const updateUser = await User.findByIdAndUpdate(
-               id,{$set:newUser},{$new:true}
+               id,{$set:updatedData},{$new:true}
 
             )
            
@@ -277,12 +260,12 @@ const update=asyncHandler(async(req,res)=>{
 })
 
 
-
+// ---------------------DEVICE TOKEN --------------------------
 const deviceToken=asyncHandler(async(req,res)=>{
      
-    const userId = req.user.id
+   
      const {deviceToken}=req.body
-     const user = await User.findById(userId).select("deviceTokens")
+     const user = await User.findById(req.user.id).select("deviceTokens")
      if(!user){
           return res.status(404).json({status:false,message:"Please Login again"})
      }

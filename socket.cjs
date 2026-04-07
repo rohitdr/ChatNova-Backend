@@ -14,8 +14,11 @@ const initSocket = (server)=>{
   
      io.on("connection",(socket)=>{
      socketHandler(io,socket)
-         
+       socket.on("error", (err) => {
+      console.error("Socket error:", err);
+    })
      })
+  
      
      return io;
 }

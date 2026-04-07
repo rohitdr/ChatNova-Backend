@@ -51,7 +51,7 @@ const sendMessage=asyncHandler(async (req, res) => {
           .status(404)
           .json({ status: false, message: "Conversation or Reciver id is required" });
     }
-const populatedConversation = await Conversation.findById(conversation._id).populate("participents.user","-password -email -refress_token -deviceTokens")
+const populatedConversation = await Conversation.findById(conversation._id).populate("participents.user","-password -email -refreshToken -deviceTokens")
  
 
 let messageSaved =await Message.create({
@@ -112,7 +112,7 @@ let messageSaved =await Message.create({
     //   await sendNotification(message, sender.name, receiver);
     // }
       // }
-      let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refress_token").lean()
+      let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refreshToken").lean()
       //sending message to all the participents of group
 conversation.participents.forEach((p)=>{
     io.to(p.user.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
@@ -145,7 +145,7 @@ const recieveMessage=asyncHandler(async (req, res) => {
   //    }
   //    const messages = await Message.find({
   //     conversationId:conversationId
-  //    }).populate("senderId","-password -refress_token -email -deviceTokens").sort({createdAt:-1})
+  //    }).populate("senderId","-password -refreshToken -email -deviceTokens").sort({createdAt:-1})
   //    .skip((page-1)*limit)
   //    .limit(Number(limit+1))
   //    if(!messages){
@@ -179,7 +179,7 @@ const recieveMessage=asyncHandler(async (req, res) => {
         query.createdAt = {$lt:date}
       }
      }
-     const messages = await Message.find(query).populate("senderId","-password -refress_token -email -deviceTokens").sort({createdAt:-1})
+     const messages = await Message.find(query).populate("senderId","-password -refreshToken -email -deviceTokens").sort({createdAt:-1})
         .limit(20).lean()
      if(!messages){
         return res
@@ -216,7 +216,7 @@ const sendFile=asyncHandler( async (req, res) => {
     });
     
     //socket
-const populatedConversation = await Conversation.findById(chat._id).populate("participents.user","-password -email -refress_token -deviceTokens")
+const populatedConversation = await Conversation.findById(chat._id).populate("participents.user","-password -email -refreshToken -deviceTokens")
 
 chat.lastMessage={
      text:`New ${type}`,
@@ -257,7 +257,7 @@ chat.lastMessage={
        
     });
          await messageSaved.save()
-         let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refress_token").lean()
+         let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refreshToken").lean()
   // chat.participents.forEach(  p=>{
       // if(p.user.toString() !== senderId){
   io.to(chat._id.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})

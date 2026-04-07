@@ -77,7 +77,7 @@ const addMember=asyncHandler( async (req, res) => {
     req.group.participents.push(...participents)
             req.group.lastActivity=Date.now()
     await req.group.save()
-    const conversation = await Conversation.findById(req.group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
+    const conversation = await Conversation.findById(req.group._id.toString()).populate("participents.user","-password -email -refreshToken -deviceTokens")
     
           const conversationToSend={
        ...conversation.toObject(),
@@ -142,7 +142,7 @@ const removeMember=asyncHandler(async (req, res) => {
     );
     req.group.lastActivity=Date.now()
   await req.group.save()
-        const conversation = await Conversation.findById(req.group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
+        const conversation = await Conversation.findById(req.group._id.toString()).populate("participents.user","-password -email -refreshToken -deviceTokens")
 
              const conversationToSend={
        ...conversation.toObject(),
@@ -253,7 +253,7 @@ const updateGroup=asyncHandler( async (req, res) => {
   const updateText = `Admin updated the group ${updatedFields.join(", ")}`;
  
     await group.save()
-        const populatedConversation = await Conversation.findById(group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
+        const populatedConversation = await Conversation.findById(group._id.toString()).populate("participents.user","-password -email -refreshToken -deviceTokens")
 
      const conversationToSend={
        ...populatedConversation.toObject(),
@@ -310,7 +310,7 @@ const leaveGroup=asyncHandler( async (req, res) => {
   return res.status(404).json({status:false,message:"You are Not a Member of the Group"})
    }
 await Conversation.findByIdAndUpdate(req.body.groupId,{$pull:{participents:{user:req.user.id}}})
- const populatedConversation = await Conversation.findById(group._id.toString()).populate("participents.user","-password -email -refress_token -deviceTokens")
+ const populatedConversation = await Conversation.findById(group._id.toString()).populate("participents.user","-password -email -refreshToken -deviceTokens")
   const updateText = `${user.name} Leaved the group`;
      const conversationToSend={
        ...populatedConversation.toObject(),

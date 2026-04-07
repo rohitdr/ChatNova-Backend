@@ -79,7 +79,7 @@ const searchUser=asyncHandler(async(req,res)=>{
             }
 
             ]
-        }).select("-password -email -refress_token -deviceTokens ").limit(15).lean()
+        }).select("-password -email -refreshToken -deviceTokens ").limit(15).lean()
        
 
         if(users.length === 0){
@@ -94,7 +94,7 @@ const searchUser=asyncHandler(async(req,res)=>{
 const getUserById=asyncHandler(async(req,res)=>{
         
             const id = req.params.id
-            const user = await User.findById(id).select("-password -refress_token -deviceTokens")
+            const user = await User.findById(id).select("-password -refreshToken -deviceTokens")
             if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
             }

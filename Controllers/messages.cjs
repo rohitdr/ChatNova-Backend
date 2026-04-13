@@ -1,7 +1,7 @@
 
 const Conversation = require("../Modals/Conversation.cjs");
 const Message = require("../Modals/Message.cjs");
-
+const sendNotification = require("../Utils/sendNotification.cjs")
 
 const { getIo } = require('../Socket/socketInstance.cjs');
 
@@ -11,13 +11,14 @@ const User = require("../Modals/User.cjs");
 const  asyncHandler  = require("../Utils/asyncHandler.cjs");
 const { onlineUsers } = require("../Socket/socketHandler.cjs");
 
-// route to send messages login required
+//----------------- SEND MESSAGE_----------------------
+
 const sendMessage=asyncHandler(async (req, res) => {
   const io=getIo()
     const {  message, conversationId,tempId,replyTo } = req.body;
     const senderId = req.user.id;
 
-    let conversation;
+
     if (replyTo?.messageId) {
   const originalMessage = await Message.findById(replyTo.messageId);
 
@@ -28,9 +29,9 @@ const sendMessage=asyncHandler(async (req, res) => {
     });
   }
 }
-    // if conversation id is their
-    if (conversationId) {
-      conversation = await Conversation.findById(conversationId);
+  
+  
+     const conversation = await Conversation.findById(conversationId);
       if (!conversation) {
         return res
           .status(404)
@@ -44,13 +45,7 @@ const sendMessage=asyncHandler(async (req, res) => {
           .status(404)
           .json({ status: false, message: "Not allowed" });
      }
-    } 
     
-    else{
-       return res
-          .status(404)
-          .json({ status: false, message: "Conversation or Reciver id is required" });
-    }
 const populatedConversation = await Conversation.findById(conversation._id).populate("participents.user","-password -email -refreshToken -deviceTokens")
  
 
@@ -62,22 +57,27 @@ let messageSaved =await Message.create({
       replyTo:replyTo || null
     });
   
-    conversation.lastMessage={
-      text:message,
-      sender:senderId,
-      createdAt:Date.now(),
-      replyTo: replyTo ? {
-    text: replyTo.text,
-    type: replyTo.type
-  } : null
+  await Conversation.updateOne(
+    { _id: conversationId },
+    {
+      $set: {
+        lastMessage: {
+          text: message,
+          sender: senderId,
+          createdAt: Date.now(),
+          replyTo: replyTo
+            ? { text: replyTo.text, type: replyTo.type }
+            : null,
+        },
+      },
+      $inc: {
+        "participents.$[elem].unreadCount": 1,
+      },
+    },
+    {
+      arrayFilters: [{ "elem.user": { $ne: senderId } }],
     }
-    conversation.participents.map((p)=>{
-      if(p.user.toString()!==senderId){
-        p.unreadCount = (p.unreadCount || 0)+1
-      }
-      return p
-    })
-    await conversation.save()
+  );
     const conversationToSend={
        ...populatedConversation.toObject(),
         ConversationId:conversation._id,
@@ -91,29 +91,54 @@ let messageSaved =await Message.create({
   } : null
         }
     }
-    const recievers = conversation.participents
-    .map((p)=>p.user.toString() )
-    .filter((p)=>p !== senderId)
-    recievers.forEach(element => {
-      if(onlineUsers.has(element))
-      {
-        const alreadydeliverd = messageSaved.deliveredTo.some((d)=>
-        d.user.toString() === element
-        )
-        if(!alreadydeliverd){
-          messageSaved.deliveredTo.push({user:element,deliveredAt:Date.now()})
-        }
-      }
-       
-    });
-         await messageSaved.save()
 
-    // if (receiver.deviceTokens?.length) {
-    //   await sendNotification(message, sender.name, receiver);
-    // }
-      // }
-      let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refreshToken").lean()
-      //sending message to all the participents of group
+          let newMessage = await Message.findById(messageSaved._id.toString()).populate("senderId"," -password -deviceTokens -refreshToken").lean()
+    const receivers = conversation.participents
+    .map((p) => p.user.toString())
+    .filter((id) => id !== senderId);
+
+  const onlineReceiverIds = receivers.filter((id) =>
+    onlineUsers.has(id)
+  );
+
+  const offlineReceiverIds = receivers.filter(
+    (id) => !onlineUsers.has(id)
+  );
+
+
+  if (onlineReceiverIds.length) {
+    await Message.updateOne(
+      { _id: messageSaved._id.toString() },
+      {
+        $addToSet: {
+          deliveredTo: {
+            $each: onlineReceiverIds.map((id) => ({
+              user: id,
+              deliveredAt: new Date(),
+            })),
+          },
+        },
+      }
+    );
+  }
+     onlineReceiverIds.forEach((id)=>{ io.to(id).emit("newMessage",{...newMessage,tempId,conversationToSend}) })
+  const offlineUsers = await User.find(
+    { _id: { $in: offlineReceiverIds } },
+    { deviceTokens: 1 }
+  ).lean();
+
+  const tokens = offlineUsers.flatMap((u) => u.deviceTokens || []);
+
+  if (tokens.length) {
+    await sendNotification(
+      message,
+      newMessage.senderId.name,
+      tokens
+    );
+  }
+ 
+
+      
 conversation.participents.forEach((p)=>{
     io.to(p.user.toString()).emit("newMessage",{...newMessage,tempId,conversationToSend})
 })
@@ -123,38 +148,9 @@ conversation.participents.forEach((p)=>{
     return res.status(200).json({ status: true, message: newMessage });
  
 });
-
 //route to receive message login required
 const recieveMessage=asyncHandler(async (req, res) => {
 
-  //   const id =req.user.id
-  //   const {limit,page}=req.query
-  //   const conversationId = req.params.conversationId
-  
-  // const conversation = await Conversation.findById(conversationId)
-  // if(!conversation){
-  //   return res.status(404).json({status:false,message:"Conversation not found"})
-  // }
-  // const isMember = conversation.participents.some(p=>
-  //   p.user.toString()===id
-  // )
-  //  if(!isMember){
-  //      return res
-  //         .status(404)
-  //         .json({ status: false, message: "Not allowed" });
-  //    }
-  //    const messages = await Message.find({
-  //     conversationId:conversationId
-  //    }).populate("senderId","-password -refreshToken -email -deviceTokens").sort({createdAt:-1})
-  //    .skip((page-1)*limit)
-  //    .limit(Number(limit+1))
-  //    if(!messages){
-  //       return res
-  //         .status(404)
-  //         .json({ status: false, message: "Messages are not avialable" });
-  //    }
-  //   const hasMore = messages.length>limit
-  //    const finalmessages = hasMore?messages.slice(0,limit):messages
     const id =req.user.id
     const {cursor}=req.query
     const conversationId = req.params.conversationId
@@ -187,7 +183,6 @@ const recieveMessage=asyncHandler(async (req, res) => {
           .json({ status: false, message: "Messages are not avialable" });
      }
     const nextCursor = messages.length>0?messages[messages.length-1].createdAt:null
-  //    const finalmessages = hasMore?messages.slice(0,limit):messages
   
     return res.status(200).json({ status: true, message:messages,nextCursor});
  

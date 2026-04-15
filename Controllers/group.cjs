@@ -287,7 +287,6 @@ const getGroupById = asyncHandler(async (req, res) => {
 // -------------------------ALL GROUPS -----------------
 const allGroup = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
 

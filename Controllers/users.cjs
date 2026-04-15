@@ -98,7 +98,7 @@ const chattedUsers = asyncHandler(async (req, res) => {
 // ---------------------SEARCH USERS BY NAME ----------------------------
 const searchUser = asyncHandler(async (req, res) => {
     const currentId = req.user.id;
-    const search = req.query.search?.trim() || " ";
+    const search = req.query.search?.trim() || "";
 
     const users = await User.find({
         $and: [

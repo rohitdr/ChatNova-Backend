@@ -2,7 +2,7 @@
 const bcrypt = require('bcryptjs')
 const User= require('../Modals/User.cjs')
 const jwt = require('jsonwebtoken')
-const {validationResult}=require('express-validator');
+
 const asyncHandler = require('../Utils/asyncHandler.cjs');
 const cloudinary = require('../Config/Cloudinary.cjs');
 const { getIo } = require('../Socket/socketInstance.cjs');
@@ -13,11 +13,6 @@ const { getIo } = require('../Socket/socketInstance.cjs');
 // -------------CREATE USER-------------------
 const createUser =asyncHandler( async(req,res)=>{
 
-     let errors = validationResult(req)
-          if(!errors.isEmpty()){
-                 return res.status(400).json({ status:false,message:errors.array()[0].msg})
-          }
-     
       const {email,password,username}=req.body
       let existingUser = await User.findOne({
           $or:[{email},{username}]
@@ -50,12 +45,7 @@ const createUser =asyncHandler( async(req,res)=>{
 })
 // -------------------LOGIN ----------------------------
 const login=asyncHandler(async(req,res)=>{
-      
-       
-               let errors = validationResult(req)
-          if(!errors.isEmpty()){
-                 return res.status(400).json({ status:false,message:errors.array()[0].msg})
-          }
+         
      const {email,password}=req.body
       let user= await User.findOne({email:email}).select("-deviceTokens")
       if(!user || !(await bcrypt.compare(password,user.password))){
@@ -91,7 +81,7 @@ const login=asyncHandler(async(req,res)=>{
          
 })
 // -----------------------REFRESH ACCESS TOKEN ------------------------------------
-const refress=asyncHandler (async(req,res)=>{
+const refresh=asyncHandler (async(req,res)=>{
 
       const authHeader = req.headers.authorization
     
@@ -127,10 +117,7 @@ const logout = asyncHandler(async (req, res) => {
 // ------------------FORGET PASSWORD -------------------
 const forgetPassowrd=asyncHandler(async(req,res)=>{
         
-               let errors = validationResult(req)
-          if(!errors.isEmpty()){
-                return res.status(400).json({ status:false,message:errors.array()[0].msg})
-          }
+            
           const {email,password,username}=req.body
           let user = await User.findOne({email:email}).select("username")
           if(!user || username!==user.username){
@@ -154,10 +141,6 @@ const forgetPassowrd=asyncHandler(async(req,res)=>{
 // -----------------------UPDATE PASSWORD ----------------------------
 const updatePassword=asyncHandler(async(req,res)=>{
       
-               let errors = validationResult(req)
-          if(!errors.isEmpty()){
-                return res.status(400).json({ status:false,message:errors.array()[0].msg})
-          }
           const {oldPassword,newPassword}=req.body
          
           let user = await User.findById(req.user.id).select("password")
@@ -185,7 +168,6 @@ const updatePassword=asyncHandler(async(req,res)=>{
 // --------------------GET USER-------------------
 const getUser=asyncHandler(async(req,res)=>{
     
-          
             const user = await User.findById(req.user.id).select("-password -refreshToken -deviceTokens").lean()
             if(!user){
                return res.status(404).json({status:false,message:"User does not Exist "})
@@ -250,7 +232,7 @@ const update=asyncHandler(async(req,res)=>{
   phone_number:updateUser.phone_number,
   image:updateUser.image,
   onlineStatus:updateUser.onlineStatus,
-  ...newUser
+  ...updatedData
   
     }
           io.to(id).emit("updateUser",userToSend)
@@ -280,4 +262,4 @@ const deviceToken=asyncHandler(async(req,res)=>{
 
 
 
-module.exports= {createUser,login,refress,logout,deviceToken,updatePassword,forgetPassowrd,updatePassword,update,getUser}
+module.exports= {createUser,login,refresh,logout,deviceToken,updatePassword,forgetPassowrd,updatePassword,update,getUser}

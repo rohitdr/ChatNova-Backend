@@ -1,25 +1,62 @@
-
 const express = require('express');
-const fetchUser = require('../Middleware/fetchUser.cjs');
 const router = express.Router();
 
-const { chattedUsers, searchUser, getUserById } = require('../Controllers/users.cjs');
+const fetchUser = require('../Middleware/fetchUser.cjs');
+const handleValidation = require('../Middleware/handleValidation.cjs');
+
+const {
+  chattedUsers,
+  searchUser,
+  getUserById
+} = require('../Controllers/users.cjs');
+
+const { query, param } = require('express-validator');
 
 
+// GET chatted users (pagination required)
+router.get(
+  '/chattedUsers',
+  [
+    query("page", "Enter valid page number")
+      .isInt({ min: 1 })
+      .toInt(),
 
-router.get('/chattedUsers', fetchUser,chattedUsers)
+    query("limit", "Enter valid limit")
+      .isInt({ min: 1, max: 100 })
+      .toInt()
+  ],
+  fetchUser,
+  handleValidation,
+  chattedUsers
+);
 
 
-//route to search user with name , username ,phonenumber login required
-router.get('/search', fetchUser,searchUser)
+// Search user (name / username / phone)
+router.get(
+  '/search',
+  [
+    query("search", "Enter search value")
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+  ],
+  fetchUser,
+  handleValidation,
+  searchUser
+);
 
-//route to get user by id
-// route to get userDetails token required
-router.get('/getUser/:id',fetchUser,getUserById)
+
+// Get user by ID
+router.get(
+  '/getUser/:id',
+  [
+    param("id", "Invalid user ID")
+      .isMongoId()
+  ],
+  fetchUser,
+  handleValidation,
+  getUserById
+);
 
 
-
-
-
-
-module.exports = router
+module.exports = router;

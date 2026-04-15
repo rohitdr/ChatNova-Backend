@@ -1,13 +1,15 @@
 const express = require("express");
-
 const router = express.Router();
 
 const { body } = require("express-validator");
+
 const fetchUser = require("../Middleware/fetchUser.cjs");
+const handleValidation = require("../Middleware/handleValidation.cjs");
+
 const {
   createUser,
   login,
-  refress,
+  refresh,
   logout,
   forgetPassowrd,
   updatePassword,
@@ -16,7 +18,8 @@ const {
   deviceToken,
 } = require("../Controllers/auth.cjs");
 
-//path to create a user, not required access token
+
+// Create user (no auth required)
 router.post(
   "/createUser",
   [
@@ -24,24 +27,32 @@ router.post(
     body("username", "Enter a valid username").isLength({ min: 8 }),
     body("password", "Password must be of length 8").isLength({ min: 8 }),
   ],
-  createUser,
+  handleValidation,
+  createUser
 );
-//path to login for the user
+
+
+// Login user
 router.post(
   "/login",
   [
     body("email", "Enter a valid Email").isEmail(),
     body("password", "Password must of length 8").isLength({ min: 8 }),
   ],
-  login,
+  handleValidation,
+  login
 );
-// route to get new access token from refress token when it expires
-router.post("/refresh", refress);
 
-// route to login access token required
 
+// Refresh token
+router.post("/refresh", refresh);
+
+
+// Logout (auth required)
 router.post("/logout", fetchUser, logout);
 
+
+// Forget password
 router.put(
   "/forgetPassword",
   [
@@ -49,28 +60,55 @@ router.put(
     body("username", "Username length must be 8 digits").isLength({ min: 8 }),
     body("password", "password must be of length 8").isLength({ min: 8 }),
   ],
-  forgetPassowrd,
+  handleValidation,
+  forgetPassowrd
 );
-//route to update password of login user no authentication required
+
+
+// Update password (auth required)
 router.put(
   "/updatePassword",
   [
-    body("oldPassword", "password length should be more than 8").isLength({
-      min: 8,
-    }),
-    body("newPassword", "password length should be more than 8").isLength({
-      min: 8,
-    }),
+    body("oldPassword", "password length should be more than 8").isLength({ min: 8 }),
+    body("newPassword", "password length should be more than 8").isLength({ min: 8 }),
   ],
   fetchUser,
-  updatePassword,
+  handleValidation,
+  updatePassword
 );
 
-// route to get userDetails token required
+
+// Get user details
 router.get("/getUser", fetchUser, getUser);
 
-router.post("/update", fetchUser, update);
 
-router.post("/deviceToken", fetchUser, deviceToken);
+// Update user profile
+router.post(
+  "/update",
+  [
+    body("email", "Please Enter a valid Email").optional().isEmail(),
+    body("username", "name must be of more than 7").optional().isLength({ min: 8 }),
+    body("name", "name must be of more than 3").optional().isLength({ min: 3 }),
+    body("phone_number", "Enter valid Indian phone number")
+      .optional()
+      .isMobilePhone("en-IN"),
+  ],
+  fetchUser,
+  handleValidation,
+  update
+);
+
+
+// Save device token
+router.post(
+  "/deviceToken",
+  [
+    body("token", "Device token is required").notEmpty()
+  ],
+  fetchUser,
+  handleValidation,
+  deviceToken
+);
+
 
 module.exports = router;

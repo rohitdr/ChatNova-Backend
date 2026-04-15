@@ -1,5 +1,8 @@
-const Message = require('../Modals/Message.cjs');
-const Conversation = require('../Modals/Conversation.cjs');
+const Message = require("../Modals/Message.cjs");
+const Conversation = require("../Modals/Conversation.cjs");
+
+
+// ----------------- UPDATE REACTION ----------------------
 
 const updateReaction = async (
   { messageId, conversationId, emoji, userId },
@@ -13,20 +16,23 @@ const updateReaction = async (
     const message = await Message.findById(messageId);
     if (!message) return;
 
-    const existingReaction = message.reaction.find((r) =>
-      r.user.toString() === userId.toString()
+    const existingReaction = message.reaction.find(
+      r => r.user.toString() === userId.toString()
     );
 
     if (existingReaction) {
       if (existingReaction.emoji === emoji) {
         message.reaction = message.reaction.filter(
-          (r) => r.user.toString() !== userId.toString()
+          r => r.user.toString() !== userId.toString()
         );
       } else {
         existingReaction.emoji = emoji;
       }
     } else {
-      message.reaction.push({ user: userId, emoji: emoji });
+      message.reaction.push({
+        user: userId,
+        emoji: emoji
+      });
     }
 
     await message.save();
@@ -35,10 +41,14 @@ const updateReaction = async (
       messageId,
       reaction: message.reaction,
     });
+
   } catch (error) {
     console.error("Error updating reaction:", error);
   }
 };
+
+
+// ----------------- MARK SEEN ----------------------
 
 const markSeen = async ({ conversationId, userId }, io) => {
   try {
@@ -54,8 +64,14 @@ const markSeen = async ({ conversationId, userId }, io) => {
       },
       {
         $addToSet: {
-          deliveredTo: { user: userId, deliveredAt: now },
-          seenBy: { user: userId, seenAt: now },
+          deliveredTo: {
+            user: userId,
+            deliveredAt: now
+          },
+          seenBy: {
+            user: userId,
+            seenAt: now
+          },
         },
       }
     );
@@ -75,9 +91,16 @@ const markSeen = async ({ conversationId, userId }, io) => {
       userId,
       seenAt: now,
     });
+
   } catch (error) {
     console.error("Error marking messages as seen:", error);
   }
 };
 
-module.exports = { updateReaction, markSeen };
+
+// ----------------- EXPORTS ----------------------
+
+module.exports = {
+  updateReaction,
+  markSeen
+};

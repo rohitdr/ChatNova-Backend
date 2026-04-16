@@ -24,10 +24,12 @@ const socketHandler = (io,socket)=>{
     })
 
     socket.on("typing",({conversationId,userId,name})=>{
+    
         socket.to(conversationId).emit("user_typing",{userId,name})
 
     })
     socket.on("stop_typing",({conversationId,userId})=>{
+    
         socket.to(conversationId).emit("user_stop_typing",{userId})
 
     })

@@ -51,8 +51,11 @@ const createGroup = asyncHandler(async (req, res) => {
     text: `${user.name} created the group ${name}`,
     type: "system",
   });
-
-  io.to(id).emit("group_created", newGroup);
+const groupMembers = newGroup.participents.map((p)=>p.user.toString())
+groupMembers.forEach(id => {
+   io.to(id).emit("group_created", newGroup);
+});
+ 
 
   return res.status(200).json({
     status: true,

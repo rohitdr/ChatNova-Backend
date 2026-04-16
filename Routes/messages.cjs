@@ -22,28 +22,27 @@ router.post(
     body("conversationId", "Invalid conversationId")
       .isMongoId(),
 
-    body("message")
+    body("message","Enter a valid Mesage")
       .isString()
       .trim()
       .isLength({ min: 1, max: 2000 }),
 
-    body("tempId")
-      .isString()
+    body("tempId","Enter a valid temp Id")
       .notEmpty(),
 
-    body("replyTo")
-      .optional()
+    body("replyTo","ReplyTo should be a object")
+      .optional({nullable:true})
       .isObject(),
 
-    body("replyTo.messageId")
+    body("replyTo.messageId","Invalid MongoId")
       .optional()
       .isMongoId(),
 
-    body("replyTo.text")
+    body("replyTo.text","Enter a valid text")
       .optional()
       .isString(),
 
-    body("replyTo.type")
+    body("replyTo.type","Enter a valid type")
       .optional()
       .isIn(["text", "image", "video"]),
   ],
@@ -92,7 +91,7 @@ router.post(
       .isInt({ min: 1, max: 10 * 1024 * 1024 }),
 
     body("tempId", "Enter valid tempId")
-      .isString()
+     
       .notEmpty(),
   ],
   fetchUser,

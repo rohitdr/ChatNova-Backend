@@ -94,9 +94,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     }
   };
 
-  const newMessage = await Message.findById(messageSaved._id.toString())
-    .populate("senderId", "-password -deviceTokens -refreshToken")
-    .lean();
+
 
   const receivers = conversation.participents
     .map(p => p.user.toString())
@@ -111,6 +109,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   );
 
   if (onlineReceiverIds.length) {
+    console.log(onlineReceiverIds)
     await Message.updateOne(
       { _id: messageSaved._id.toString() },
       {
@@ -125,7 +124,9 @@ const sendMessage = asyncHandler(async (req, res) => {
       }
     );
   }
-
+  const newMessage = await Message.findById(messageSaved._id.toString())
+    .populate("senderId", "-password -deviceTokens -refreshToken")
+    .lean();
   onlineReceiverIds.forEach(id => {
     io.to(id).emit("newMessage", {
       ...newMessage,
@@ -208,7 +209,7 @@ const recieveMessage = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(20)
     .lean();
-
+const totalCount = await Message.countDocuments({ conversationId });
   const nextCursor =
     messages.length > 0
       ? messages[messages.length - 1].createdAt
@@ -217,7 +218,8 @@ const recieveMessage = asyncHandler(async (req, res) => {
   return res.status(200).json({
     status: true,
     message: messages,
-    nextCursor
+    nextCursor,
+    totalCount
   });
 });
 

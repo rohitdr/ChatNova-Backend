@@ -13,7 +13,9 @@ const initSocket = (server)=>{
    setIo(io);
   
      io.on("connection",(socket)=>{
+    
      socketHandler(io,socket)
+     
        socket.on("error", (err) => {
       console.error("Socket error:", err);
     })

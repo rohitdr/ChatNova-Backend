@@ -37,7 +37,7 @@ const socketHandler = (io,socket)=>{
       socket.leave(groupId)
    
     }) 
-     io.emit("getOnlineUsers", Array.from(onlineUsers.keys()));
+  
       
       socket.on("send_reaction", async(data)=>{
            await updateReaction(data,io)
@@ -45,7 +45,7 @@ const socketHandler = (io,socket)=>{
         
 
          socket.on("disconnect" ,async()=>{
-           await disconnectHandler(userId,onlineUsers,socket,io)
+           await disconnectHandler(userId,onlineUsers,io)
             })
 
 }

@@ -60,14 +60,13 @@ const markSeen = async ({ conversationId, userId }, io) => {
       {
         conversationId,
         senderId: { $ne: userId },
-        "seenBy.user": { $ne: userId },
-      },
+        seenBy: {
+      $not: {
+        $elemMatch: { user: userId }
+      }
+      }},
       {
         $addToSet: {
-          deliveredTo: {
-            user: userId,
-            deliveredAt: now
-          },
           seenBy: {
             user: userId,
             seenAt: now

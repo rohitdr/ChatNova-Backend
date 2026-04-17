@@ -48,7 +48,6 @@ router.post(
     body("participents", "Participents must be an array").isArray({ min: 1 }),
     body("participents.*.user", "Invalid UserId").isMongoId(),
     body("participents.*.role").isIn(["member", "admin"]),
-
     body("tempId", "tempId must not be empty").notEmpty(),
   ],
   fetchUser,

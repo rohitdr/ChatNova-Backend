@@ -110,7 +110,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 
   if (onlineReceiverIds.length) {
    
-    const m=await Message.updateOne(
+  await Message.updateOne(
       { _id: messageSaved._id.toString() },
       {
         $addToSet: {
@@ -123,7 +123,7 @@ const sendMessage = asyncHandler(async (req, res) => {
         },
       }
     );
-      console.log(m)
+  
   }
 
   const newMessage = await Message.findById(messageSaved._id.toString())

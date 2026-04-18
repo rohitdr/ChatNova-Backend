@@ -193,19 +193,18 @@ npm run dev
 * Disconnect handled with debounce to avoid false offline status
 * Socket + REST combined for real-time + persistence
 
----
+
 
 ## 🔗 Frontend Repository
 
 👉 https://github.com/rohitdr/ChatNova-Frontend.git
 
----
 
 ## 👨‍💻 Author
 
 Rohit Kumar
 
----
+
 
 ## ⭐ Support
 

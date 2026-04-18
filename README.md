@@ -193,7 +193,9 @@ npm run dev
 * Disconnect handled with debounce to avoid false offline status
 * Socket + REST combined for real-time + persistence
 
+## 🌐 Live Links
 
+- Backend API: https://chatnova-backend-1.onrender.com
 
 ## 🔗 Frontend Repository
 

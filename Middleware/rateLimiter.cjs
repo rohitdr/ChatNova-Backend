@@ -1,5 +1,5 @@
 const Redis = require('ioredis')
-const redis=new Redis()
+const redis=new Redis(process.env.REDIS_URL)
 const rateLimiter=(options={})=>{
  const{
  MAX_REQUESTS=10,

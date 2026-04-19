@@ -40,8 +40,17 @@ It handles:
 * 🔐 Secure authentication (JWT + refresh tokens)
 * 🔄 Token refresh & protected routes
 * 🔔 Push notifications (Firebase FCM)
+*  🚫 Rate limiting using Redis to prevent spam and abuse (returns 429 on excessive requests)
 
----
+
+## 🔒 Rate Limiting (Redis)
+
+ChatNova uses Redis-based rate limiting to prevent message spam and protect backend resources.
+
+- Limits excessive requests per user
+- Returns `429 Too Many Requests` when threshold is exceeded
+- Improves system stability and abuse prevention
+
 
 ## 🧠 Key Concepts
 
@@ -79,7 +88,6 @@ Create a `.env` file:
 
 Create a `.env` file in the root directory:
 
-```env
 PORT=5000
 NODE_ENV=development
 
@@ -97,6 +105,7 @@ FIREBASE_PRIVATE_KEY=your_private_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+REDIS_URL=your_redis_tcp_url
 ```
 
 ### 📌 Notes

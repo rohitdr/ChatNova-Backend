@@ -13,11 +13,14 @@ const {
 } = require("../Controllers/messages.cjs");
 
 const { body, query, param } = require("express-validator");
+const  rateLimiter  = require("../Middleware/rateLimiter.cjs");
 
 
 // Send message (login required)
 router.post(
   "/sendMessage",
+  fetchUser,
+  rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("conversationId", "Invalid conversationId")
       .isMongoId(),
@@ -46,7 +49,6 @@ router.post(
       .optional()
       .isIn(["text", "image", "video"]),
   ],
-  fetchUser,
   handleValidation,
   sendMessage
 );
@@ -55,6 +57,7 @@ router.post(
 // Receive messages (login required)
 router.get(
   "/recieveMessage/:conversationId",
+  fetchUser,
   [
     param("conversationId", "Invalid conversationId")
       .isMongoId(),
@@ -63,7 +66,6 @@ router.get(
       .optional()
       .isISO8601()
   ],
-  fetchUser,
   handleValidation,
   recieveMessage
 );
@@ -72,6 +74,8 @@ router.get(
 // Send file (image/video/file upload)
 router.post(
   "/sendFile/:id",
+  fetchUser,
+  rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     param("id", "Invalid conversationId")
       .isMongoId(),
@@ -94,7 +98,6 @@ router.post(
      
       .notEmpty(),
   ],
-  fetchUser,
   handleValidation,
   sendFile
 );
@@ -103,11 +106,11 @@ router.post(
 // Get conversation ID (user/chat start)
 router.get(
   "/conversationId/:id",
+  fetchUser,
   [
     param("id", "Invalid receiverId")
       .isMongoId(),
   ],
-  fetchUser,
   handleValidation,
   conversationId
 );

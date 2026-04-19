@@ -18,11 +18,14 @@ const {
 
 const handleValidation = require("../Middleware/handleValidation.cjs");
 const { body, param, query } = require("express-validator");
+const rateLimiter = require("../Middleware/rateLimiter.cjs");
 
 
 // ======================= CREATE GROUP =======================
 router.post(
   "/createGroup",
+    fetchUser,
+ rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("name", "Group name must be at least 3 characters").isLength({ min: 3 }),
     body("inviteCode", "InviteCode must be at least 3 characters").isLength({ min: 3 }),
@@ -35,7 +38,6 @@ router.post(
     body("avtar.url", "url must be a string").isURL(),
     body("avtar.publicId", "public id cannot empty").notEmpty().isString(),
   ],
-  fetchUser,
   handleValidation,
   createGroup
 );
@@ -44,13 +46,14 @@ router.post(
 // ======================= ADD MEMBER =======================
 router.post(
   "/addMember",
+  fetchUser,
+  rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("participents", "Participents must be an array").isArray({ min: 1 }),
     body("participents.*.user", "Invalid UserId").isMongoId(),
     body("participents.*.role").isIn(["member", "admin"]),
     body("tempId", "tempId must not be empty").notEmpty(),
   ],
-  fetchUser,
   isGroupAdmin,
   handleValidation,
   addMember
@@ -60,13 +63,14 @@ router.post(
 // ======================= REMOVE MEMBER =======================
 router.post(
   "/removeMember",
+  fetchUser,
+  rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("participents", "Participents must be an array").isArray({ min: 1 }),
     body("participents.*.user", "Invalid UserId").isMongoId(),
 
     body("tempId", "tempId must not be empty").notEmpty(),
   ],
-  fetchUser,
   isGroupAdmin,
   handleValidation,
   removeMember
@@ -76,10 +80,10 @@ router.post(
 // ======================= GET GROUP BY ID =======================
 router.get(
   "/getGroupById/:conversationId",
+  fetchUser,
   [
     param("conversationId", "ConversationId cannot be empty").isMongoId(),
   ],
-  fetchUser,
   handleValidation,
   getGroupById
 );
@@ -92,6 +96,8 @@ router.get("/allgroups", fetchUser, allGroup);
 // ======================= UPDATE GROUP =======================
 router.put(
   "/groupUpdate",
+  fetchUser,
+   rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("name", "Group name must be at least 3 characters")
       .optional()
@@ -105,7 +111,6 @@ router.put(
     body("image.publicId").optional().isString(),
     body("image.url").optional().isURL(),
   ],
-  fetchUser,
   isGroupAdmin,
   handleValidation,
   updateGroup
@@ -115,10 +120,11 @@ router.put(
 // ======================= DELETE GROUP =======================
 router.delete(
   "/delete",
+  fetchUser,
+   rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("groupId", "Invalid GroupId").isMongoId(),
   ],
-  fetchUser,
   isGroupAdmin,
   handleValidation,
   deleteGroup
@@ -128,10 +134,11 @@ router.delete(
 // ======================= SEARCH GROUP =======================
 router.get(
   "/search",
+  fetchUser,
+   rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     query("search", "Search Input cannot be empty").notEmpty(),
   ],
-  fetchUser,
   handleValidation,
   searchGroup
 );
@@ -140,10 +147,11 @@ router.get(
 // ======================= LEAVE GROUP =======================
 router.patch(
   "/leaveGroup",
+  fetchUser,
+  rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("groupId", "Invalid GroupId").isMongoId(),
   ],
-  fetchUser,
   handleValidation,
   leaveGroup
 );

@@ -11,6 +11,7 @@ const {
 } = require('../Controllers/users.cjs');
 
 const { query, param } = require('express-validator');
+const  rateLimiter  = require('../Middleware/rateLimiter.cjs');
 
 
 // GET chatted users (pagination required)
@@ -34,6 +35,7 @@ router.get(
 // Search user (name / username / phone)
 router.get(
   '/search',
+  rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     query("search", "Enter search value")
       .isString()

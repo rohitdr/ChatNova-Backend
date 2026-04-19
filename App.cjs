@@ -3,8 +3,9 @@ const cors = require('cors')
 const cookieParser=require('cookie-parser')
 const  errorHandler = require('./Middleware/errorHandler.cjs');
 const helmet = require('helmet')
-const morgan = require('morgan')
+const morgan = require('morgan');
 const app = express()
+app.set('trust proxy', 1);
 app.use(cors({
     origin:process.env.FRONTEND_URL,
     credentials:true

@@ -17,11 +17,13 @@ const {
   update,
   deviceToken,
 } = require("../Controllers/auth.cjs");
+const  rateLimiter  = require("../Middleware/rateLimiter.cjs");
 
 
 // Create user (no auth required)
 router.post(
   "/createUser",
+  rateLimiter({ MAX_REQUESTS:5, WINDOW_SIZE:60}),
   [
     body("email", "Enter a valid Email").isEmail(),
     body("username", "Enter a valid username").isLength({ min: 8 }),
@@ -35,6 +37,7 @@ router.post(
 // Login user
 router.post(
   "/login",
+ rateLimiter({ MAX_REQUESTS:5, WINDOW_SIZE:60}),
   [
     body("email", "Enter a valid Email").isEmail(),
     body("password", "Password must of length 8").isLength({ min: 8 }),
@@ -45,16 +48,17 @@ router.post(
 
 
 // Refresh token
-router.post("/refresh", refresh);
+router.post("/refresh", rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}), refresh);
 
 
 // Logout (auth required)
-router.post("/logout", fetchUser, logout);
+router.post("/logout",fetchUser, rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),  logout);
 
 
 // Forget password
 router.put(
   "/forgetPassword",
+   rateLimiter({ MAX_REQUESTS:10, WINDOW_SIZE:60}),
   [
     body("email", "Please Enter a valid Email").isEmail(),
     body("username", "Username length must be 8 digits").isLength({ min: 8 }),
@@ -68,23 +72,26 @@ router.put(
 // Update password (auth required)
 router.put(
   "/updatePassword",
+    fetchUser,
+   rateLimiter({ MAX_REQUESTS:10, WINDOW_SIZE:60}),
   [
     body("oldPassword", "password length should be more than 8").isLength({ min: 8 }),
     body("newPassword", "password length should be more than 8").isLength({ min: 8 }),
   ],
-  fetchUser,
   handleValidation,
   updatePassword
 );
 
 
 // Get user details
-router.get("/getUser", fetchUser, getUser);
+router.get("/getUser",fetchUser, rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}), getUser);
 
 
 // Update user profile
 router.post(
   "/update",
+  fetchUser,
+   rateLimiter({ MAX_REQUESTS:10, WINDOW_SIZE:60}),
   [
     body("email", "Please Enter a valid Email").optional().isEmail(),
     body("username", "name must be of more than 7").optional().isLength({ min: 8 }),
@@ -93,7 +100,6 @@ router.post(
       .optional()
       .isMobilePhone("en-IN"),
   ],
-  fetchUser,
   handleValidation,
   update
 );
@@ -102,10 +108,11 @@ router.post(
 // Save device token
 router.post(
   "/deviceToken",
+    fetchUser,
+   rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
   [
     body("token", "Device token is required").notEmpty()
   ],
-  fetchUser,
   handleValidation,
   deviceToken
 );

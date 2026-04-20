@@ -37,7 +37,7 @@ router.post(
 // Login user
 router.post(
   "/login",
- rateLimiter({ MAX_REQUESTS:5, WINDOW_SIZE:60}),
+//  rateLimiter({ MAX_REQUESTS:5, WINDOW_SIZE:60}),
   [
     body("email", "Enter a valid Email").isEmail(),
     body("password", "Password must of length 8").isLength({ min: 8 }),

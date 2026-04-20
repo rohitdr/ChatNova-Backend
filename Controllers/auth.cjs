@@ -75,7 +75,7 @@ const login=asyncHandler(async(req,res)=>{
 
       }
   
-      res.cookie("refreshToken",refreshToken,{httpOnly:true,sameSite:"Strict",secure:true,maxAge: 7 * 24 * 60 * 60 * 1000})
+      res.cookie("refreshToken",refreshToken,{httpOnly:true,sameSite:"None",secure:true,maxAge: 7 * 24 * 60 * 60 * 1000})
        
      return res.status(200).json({status:true,userToSend,accessToken})
     

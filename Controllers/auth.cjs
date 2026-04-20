@@ -37,10 +37,9 @@ const createUser =asyncHandler( async(req,res)=>{
       }
 
       const refreshToken =jwt.sign(payload,process.env.REFRESS_SECRET,{expiresIn:"7d"})
-   
       const accessToken =jwt.sign(payload,process.env.ACCESS_SECRET,{expiresIn:"7m"})
          await User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
-               res.cookie("refreshToken",refreshToken,{httpOnly:true,sameSite:"Strict",secure:true,maxAge: 7 * 24 * 60 * 60 * 1000})
+      res.cookie("refreshToken",refreshToken,{httpOnly:true,sameSite:"None",secure:true,maxAge: 7 * 24 * 60 * 60 * 1000})
        return res.status(200).json({status:true,accessToken})
     
 })
@@ -56,12 +55,10 @@ const login=asyncHandler(async(req,res)=>{
           id:user.id
       }
  
-     const [refreshToken, accessToken] = await Promise.all([
-    Promise.resolve(jwt.sign(payload, process.env.REFRESS_SECRET, { expiresIn: "7d" })),
-    Promise.resolve(jwt.sign(payload, process.env.ACCESS_SECRET, { expiresIn: "7m" }))
-  ]);
+         const refreshToken =jwt.sign(payload,process.env.REFRESS_SECRET,{expiresIn:"7d"})
+      const accessToken =jwt.sign(payload,process.env.ACCESS_SECRET,{expiresIn:"7m"})
       if(user.refreshToken !== refreshToken){
-       User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
+      await User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
        }
       const userToSend = {
          
@@ -110,7 +107,11 @@ const refresh=asyncHandler (async(req,res)=>{
 const logout = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(200).json({ status: true, message: "Already logged out" });
-    res.clearCookie("refreshToken");
+   res.clearCookie("refreshToken", {
+  httpOnly: true,
+  sameSite: "None",
+  secure: true
+});
     await User.findByIdAndUpdate(userId, { $set: { refreshToken: null, onlineStatus: false } });
     return res.status(200).json({ status: true, message: "User logged out successfully" });
 });
@@ -245,8 +246,6 @@ const update=asyncHandler(async(req,res)=>{
 
 // ---------------------DEVICE TOKEN --------------------------
 const deviceToken=asyncHandler(async(req,res)=>{
-     
-   
      const {deviceToken}=req.body
      const user = await User.findById(req.user.id).select("deviceTokens")
      if(!user){
@@ -256,7 +255,7 @@ const deviceToken=asyncHandler(async(req,res)=>{
     if(!user.deviceTokens.includes(deviceToken)){
      user.deviceTokens.push(deviceToken)
     }
-     res.status(200).json({status:false,message:"Device token saved successfully"})
+     res.status(200).json({status:true,message:"Device token saved successfully"})
     
  
 })

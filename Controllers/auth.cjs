@@ -48,7 +48,7 @@ const createUser =asyncHandler( async(req,res)=>{
 const login=asyncHandler(async(req,res)=>{
          
      const {email,password}=req.body
-      let user= await User.findOne({email:email}).select("-deviceTokens")
+      let user= await User.findOne({email:email}).select("-deviceTokens").lean()
       if(!user || !(await bcrypt.compare(password,user.password))){
            return res.status(400).json({status:false,message:"Please use Correct correndentials"})
       }
@@ -56,11 +56,12 @@ const login=asyncHandler(async(req,res)=>{
           id:user.id
       }
  
-      const refreshToken=jwt.sign(payload,process.env.REFRESS_SECRET,{expiresIn:"7d"})
-   
-      const accessToken=jwt.sign(payload,process.env.ACCESS_SECRET,{expiresIn:"7m"})
+     const [refreshToken, accessToken] = await Promise.all([
+    Promise.resolve(jwt.sign(payload, process.env.REFRESS_SECRET, { expiresIn: "7d" })),
+    Promise.resolve(jwt.sign(payload, process.env.ACCESS_SECRET, { expiresIn: "7m" }))
+  ]);
       if(user.refreshToken !== refreshToken){
-      await User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
+       User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
        }
       const userToSend = {
          

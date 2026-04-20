@@ -11,11 +11,13 @@ const rateLimiter=(options={})=>{
     const key=`rate:${identifier}`
     const now = Date.now()
 try{
-
-     await redis.zadd(key,now,now);
-     await redis.zremrangebyscore(key,0,now-WINDOW_SIZE*1000)
-     const count =await redis.zcard(key);
-       await redis.expire(key, WINDOW_SIZE);
+       const pipeline = redis.pipeline()
+       pipeline.zadd(key,now,now);
+       pipeline.zremrangebyscore(key,0,now-WINDOW_SIZE*1000);
+       pipeline.zcard(key);
+       pipeline.expire(key, WINDOW_SIZE);
+        const results = await pipeline.exec();
+      const count = results[2][1];
      if(count>MAX_REQUESTS){
  return res.status(429).json({
         message: `You’ve hit the limit. Try again in 60 seconds.`,

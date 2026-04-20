@@ -40,7 +40,8 @@ const createUser =asyncHandler( async(req,res)=>{
    
       const accessToken =jwt.sign(payload,process.env.ACCESS_SECRET,{expiresIn:"7m"})
          await User.updateOne({_id:user.id},{$set:{refreshToken,onlineStatus:true}});
-       return res.status(200).json({status:true,accessToken,refreshToken})
+               res.cookie("refreshToken",refreshToken,{httpOnly:true,sameSite:"Strict",secure:true,maxAge: 7 * 24 * 60 * 60 * 1000})
+       return res.status(200).json({status:true,accessToken})
     
 })
 // -------------------LOGIN ----------------------------
@@ -73,22 +74,21 @@ const login=asyncHandler(async(req,res)=>{
   
 
       }
-      //for production
-     //  res.cookie("refress_token",refress_token,{httpOnly:false,sameSite:"lax",secure:false,path:'/'})
+  
+      res.cookie("refreshToken",refreshToken,{httpOnly:true,sameSite:"Strict",secure:true,maxAge: 7 * 24 * 60 * 60 * 1000})
        
-     return res.status(200).json({status:true,userToSend,accessToken,refreshToken})
+     return res.status(200).json({status:true,userToSend,accessToken})
     
          
 })
 // -----------------------REFRESH ACCESS TOKEN ------------------------------------
 const refresh=asyncHandler (async(req,res)=>{
 
-      const authHeader = req.headers.authorization
+      const refreshToken = req.cookies.refreshToken
     
-      if(!authHeader || !authHeader.startsWith("Bearer ")){
+      if(!refreshToken){
            return res.status(401).json({status:false,message:"Please login again "})
       }
-      const refreshToken=authHeader.split(" ")[1].trim()
       const decoded = jwt.verify(refreshToken,process.env.REFRESS_SECRET)
       let user = await User.findById(decoded.id).select("refreshToken")
 
@@ -109,7 +109,7 @@ const refresh=asyncHandler (async(req,res)=>{
 const logout = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(200).json({ status: true, message: "Already logged out" });
-
+    res.clearCookie("refreshToken");
     await User.findByIdAndUpdate(userId, { $set: { refreshToken: null, onlineStatus: false } });
     return res.status(200).json({ status: true, message: "User logged out successfully" });
 });

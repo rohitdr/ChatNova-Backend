@@ -48,7 +48,7 @@ const createUser =asyncHandler( async(req,res)=>{
 const login=asyncHandler(async(req,res)=>{
          
      const {email,password}=req.body
-      let user= await User.findOne({email:email}).select("-deviceTokens").lean()
+      let user= await User.findOne({email:email}).select("-deviceTokens")
       if(!user || !(await bcrypt.compare(password,user.password))){
            return res.status(400).json({status:false,message:"Please use Correct correndentials"})
       }

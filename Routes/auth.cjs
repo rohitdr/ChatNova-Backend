@@ -110,10 +110,6 @@ router.post(
   "/deviceToken",
     fetchUser,
    rateLimiter({ MAX_REQUESTS:30, WINDOW_SIZE:60}),
-  [
-    body("token", "Device token is required").notEmpty()
-  ],
-  handleValidation,
   deviceToken
 );
 

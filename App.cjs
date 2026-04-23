@@ -19,6 +19,12 @@ if (process.env.NODE_ENV === "production") {
 app.use(express.json())
 app.use(cookieParser())
 
+// ping every 5 min
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+
 app.use('/api/auth',require('./Routes/auth.cjs'))
 app.use('/api/messages',require('./Routes/messages.cjs'))
 app.use('/api/users',require('./Routes/users.cjs'))

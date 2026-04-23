@@ -5,7 +5,6 @@ const rateLimiter=(options={})=>{
  MAX_REQUESTS=10,
  WINDOW_SIZE=60
     } =options
-
     return async(req,res,next)=>{
         const identifier=req.user?.id || req.ip 
     const key=`rate:${identifier}`

@@ -37,12 +37,10 @@ const socketHandler = (io,socket)=>{
       socket.leave(groupId)
    
     }) 
-  
-      
+
       socket.on("send_reaction", async(data)=>{
            await updateReaction(data,io)
         } )
-        
 
          socket.on("disconnect" ,async()=>{
            await disconnectHandler(userId,onlineUsers,io)

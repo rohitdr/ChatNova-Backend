@@ -20,8 +20,7 @@ const initSocket = (server)=>{
       console.error("Socket error:", err);
     })
      })
-  
-     
+ 
      return io;
 }
 module.exports=initSocket

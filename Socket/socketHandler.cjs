@@ -18,7 +18,7 @@ const socketHandler = (io,socket)=>{
        await markSeen(data,io)
    })
       socket.on("join_group",(groupId)=>{
-
+console.log("join"+groupId)
      socket.join(groupId)
 
     })
@@ -34,6 +34,7 @@ const socketHandler = (io,socket)=>{
 
     })
     socket.on("leave_group",(groupId)=>{
+      console.log("leave"+groupId)
       socket.leave(groupId)
    
     }) 

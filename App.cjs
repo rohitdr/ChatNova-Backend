@@ -29,6 +29,7 @@ app.use('/api/auth',require('./Routes/auth.cjs'))
 app.use('/api/messages',require('./Routes/messages.cjs'))
 app.use('/api/users',require('./Routes/users.cjs'))
 app.use('/api/groups',require('./Routes/group.cjs'))
+app.use('/api/chat',require('./Routes/chat.cjs'))
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });

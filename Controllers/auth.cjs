@@ -159,7 +159,13 @@ const updatePassword=asyncHandler(async(req,res)=>{
                {_id:user.id},
                {$set:{password:changedPassword}}
            )
-          
+
+            res.clearCookie("refreshToken", {
+  httpOnly: true,
+  sameSite: "None",
+  secure: true
+});
+    await User.findByIdAndUpdate(user.id, { $set: { refreshToken: null, onlineStatus: false } });
           return res.status(200).json({status:true,message:"password changed successfully"})
 
 

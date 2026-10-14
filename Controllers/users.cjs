@@ -118,7 +118,7 @@ const searchUser = asyncHandler(async (req, res) => {
         .lean();
 
     if (!users.length) {
-        return res.status(404).json({ status: false, message: "No user found" });
+        return res.status(404).json({ status: true, users:[] });
     }
 
     return res.status(200).json({ status: true, users });
